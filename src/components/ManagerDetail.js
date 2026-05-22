@@ -30,18 +30,10 @@ function PointBar({ points, max }) {
   const color = pct >= 70 ? '#4ade80' : pct >= 40 ? '#d4a847' : '#555'
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <div style={{
-        flex: 1, height: 5, background: '#1e1e1e',
-        borderRadius: 3, overflow: 'hidden'
-      }}>
+      <div style={{ flex: 1, height: 5, background: '#1e1e1e', borderRadius: 3, overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 3 }} />
       </div>
-      <span style={{
-        fontSize: 13, fontFamily: 'var(--font-display)',
-        letterSpacing: '0.04em',
-        color: pct >= 70 ? '#4ade80' : 'var(--text-primary)',
-        minWidth: 36, textAlign: 'right'
-      }}>
+      <span style={{ fontSize: 13, fontFamily: 'var(--font-display)', letterSpacing: '0.04em', color: pct >= 70 ? '#4ade80' : 'var(--text-primary)', minWidth: 36, textAlign: 'right' }}>
         {points}
       </span>
     </div>
@@ -54,44 +46,13 @@ export default function ManagerDetail({ manager, rank, totalManagers, onBack, se
 
   return (
     <div>
-      <button
-        onClick={onBack}
-        style={{
-          background: 'none',
-          border: '1px solid var(--border)',
-          color: 'var(--text-secondary)',
-          borderRadius: 'var(--radius-sm)',
-          padding: '6px 14px',
-          fontSize: 12,
-          marginBottom: 20,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6
-        }}
-      >
+      <button onClick={onBack} style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-sm)', padding: '6px 14px', fontSize: 12, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 6 }}>
         Back to all managers
       </button>
 
-      <div style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius)',
-        padding: '20px 24px',
-        marginBottom: 16,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: 16
-      }}>
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '20px 24px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <div style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 36,
-            letterSpacing: '0.04em',
-            color: 'var(--text-primary)',
-            lineHeight: 1
-          }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, letterSpacing: '0.04em', color: 'var(--text-primary)', lineHeight: 1 }}>
             {manager.name}
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 6 }}>
@@ -99,62 +60,65 @@ export default function ManagerDetail({ manager, rank, totalManagers, onBack, se
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 48,
-            letterSpacing: '0.04em',
-            color: rank === 1 ? 'var(--accent)' : 'var(--text-primary)',
-            lineHeight: 1
-          }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 48, letterSpacing: '0.04em', color: rank === 1 ? 'var(--accent)' : 'var(--text-primary)', lineHeight: 1 }}>
             {totalPoints.toLocaleString()}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-            total points
-          </div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>total points</div>
         </div>
       </div>
 
-      <div style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius)',
-        overflow: 'hidden',
-        marginBottom: 16
-      }}>
-        <div style={{
-          padding: '12px 20px',
-          borderBottom: '1px solid var(--border)',
-          fontSize: 11,
-          color: 'var(--text-muted)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-          fontWeight: 600
-        }}>
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 16 }}>
+        <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
           Team breakdown
         </div>
-
         {manager.teams.map((team, i) => {
           const cs = confStyle(team.conference)
           const pct = Math.round((team.points / totalPoints) * 100)
           return (
-            <div
-              key={team.school}
-              style={{
-                padding: '14px 20px',
-                borderBottom: i < manager.teams.length - 1 ? '1px solid var(--border)' : 'none',
-                display: 'grid',
-                gridTemplateColumns: '28px 1fr auto',
-                alignItems: 'center',
-                gap: 12
-              }}
-            >
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textAlign: 'center' }}>
-                {i + 1}
-              </div>
+            <div key={team.school} style={{ padding: '14px 20px', borderBottom: i < manager.teams.length - 1 ? '1px solid var(--border)' : 'none', display: 'grid', gridTemplateColumns: '28px 1fr auto', alignItems: 'center', gap: 12 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textAlign: 'center' }}>{i + 1}</div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {team.school}
-                  </span>
-                  <span style={{
-                    fontSize: 10, padding: '1px 6px',
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{team.school}</span>
+                  <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 20, background: cs.bg, border: `1px solid ${cs.border}`, color: cs.text }}>{team.conference}</span>
+                  {team.rival_1 && (<span style={{ fontSize: 10, color: 'var(--text-muted)' }}>vs {team.rival_1} and {team.rival_2}</span>)}
+                </div>
+                <PointBar points={team.points} max={maxTeamPoints} />
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{pct}% of total</div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+        <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+          Scoring reference
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+          {[
+            { label: 'Regular season win', pts: 10 },
+            { label: 'Top 25 win', pts: 18 },
+            { label: 'Rival win', pts: 30 },
+            { label: 'Conf. championship appearance', pts: 30 },
+            { label: 'Conf. championship win', pts: 60 },
+            { label: 'Non-CFP bowl win', pts: 40 },
+            { label: 'CFP appearance', pts: 25 },
+            { label: 'CFP 1st round bye', pts: 20 },
+            { label: 'CFP Round 1 win', pts: 35 },
+            { label: 'CFP Quarterfinal win', pts: 50 },
+            { label: 'CFP Semifinal win', pts: 70 },
+            { label: 'National championship', pts: 100 },
+          ].map((item, i) => (
+            <div key={i} style={{ padding: '10px 20px', borderBottom: i < 10 ? '1px solid var(--border)' : 'none', borderRight: i % 2 === 0 ? '1px solid var(--border)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{item.label}</span>
+              <span style={{ fontSize: 13, fontFamily: 'var(--font-display)', letterSpacing: '0.04em', color: item.pts >= 50 ? 'var(--accent)' : 'var(--text-primary)' }}>{item.pts}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
