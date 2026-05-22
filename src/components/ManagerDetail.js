@@ -69,7 +69,7 @@ export default function ManagerDetail({ manager, rank, totalManagers, onBack, se
           gap: 6
         }}
       >
-        ← All managers
+        Back to all managers
       </button>
 
       <div style={{
@@ -157,61 +157,4 @@ export default function ManagerDetail({ manager, rank, totalManagers, onBack, se
                     {team.school}
                   </span>
                   <span style={{
-                    fontSize: 10, padding: '1px 6px', borderRadius: 20,
-                    background: cs.bg, border: `1px solid ${cs.border}`, color: cs.text
-                  }}>
-                    {team.conference}
-                  </span>
-                  {team.rival_1 && (
-                    <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                      vs {team.rival_1} · {team.rival_2}
-                    </span>
-                  )}
-                </div>
-                <PointBar points={team.points} max={maxTeamPoints} />
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                  {pct}% of total
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      <div style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius)',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          padding: '12px 20px',
-          borderBottom: '1px solid var(--border)',
-          fontSize: 11,
-          color: 'var(--text-muted)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-          fontWeight: 600
-        }}>
-          Scoring reference
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
-          {[
-            { label: 'Regular season win', pts: 10 },
-            { label: 'Top 25 win', pts: 18 },
-            { label: 'Rival win', pts: 30 },
-            { label: 'Conf. championship appearance', pts: 30 },
-            { label: 'Conf. championship win', pts: 60 },
-            { label: 'Non-CFP bowl win', pts: 40 },
-            { label: 'CFP appearance', pts: 25 },
-            { label: 'CFP 1st round bye', pts: 20 },
-            { label: 'CFP Round 1 win', pts: 35 },
-            { label: 'CFP Quarterfinal win', pts: 50 },
-            { label: 'CFP Semifinal win', pts: 70 },
-            { label: 'National championship', pts: 100 },
-          ].map((item, i) => (
-            <div key={i} style={{
-              padding: '10px 20px',
-              borderBottom: i < 10 ? '1px solid var(--border
+                    fontSize: 10, padding: '1px 6px',
