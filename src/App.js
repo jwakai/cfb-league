@@ -20,57 +20,57 @@ export default function App() {
     setLoading(true)
     setError(null)
     try {
-      const { data: events, error: eventsError } = await supabase
-        .from('Scoring_Events')
-        .select(`
-          points,
-          event_type,
-          season,
-          team_id,
-          manager_id,
-          Teams (school, conference),
-          Managers (name)
-        `)
-        .eq('season', season)
+      const { data: managers, error: mgrError } = await supabase
+        .from('Managers')
+        .select('*')
+      if (mgrError) throw mgrError
 
-      if (eventsError) throw eventsError
+      const { data: teams, error: teamsError } = await supabase
+        .from('Teams')
+        .select('*')
+      if (teamsError) throw teamsError
 
       const { data: rosters, error: rosterError } = await supabase
         .from('Managers_Teams')
-        .select(`
-          manager_id,
-          team_id,
-          Managers (name),
-          Teams (school, conference, rival_1, rival_2)
-        `)
+        .select('*')
         .eq('season', season)
-
       if (rosterError) throw rosterError
+
+      const { data: events, error: eventsError } = await supabase
+        .from('Scoring_Events')
+        .select('*')
+        .eq('season', season)
+      if (eventsError) throw eventsError
 
       const managerMap = {}
 
-      rosters.forEach(row => {
-        const mgrName = row.Managers?.name
-        if (!mgrName) return
-        if (!managerMap[mgrName]) {
-          managerMap[mgrName] = { name: mgrName, totalPoints: 0, teams: [] }
+      managers.forEach(mgr => {
+        managerMap[mgr.id] = {
+          name: mgr.name,
+          totalPoints: 0,
+          teams: []
         }
-        managerMap[mgrName].teams.push({
-          id: row.team_id,
-          school: row.Teams?.school,
-          conference: row.Teams?.conference,
-          rival_1: row.Teams?.rival_1,
-          rival_2: row.Teams?.rival_2,
+      })
+
+      rosters.forEach(row => {
+        const mgr = managerMap[row.manager_id]
+        const team = teams.find(t => t.id === row.team_id)
+        if (!mgr || !team) return
+        mgr.teams.push({
+          id: team.id,
+          school: team.school,
+          conference: team.conference,
+          rival_1: team.rival_1,
+          rival_2: team.rival_2,
           points: 0
         })
       })
 
       events.forEach(event => {
-        const mgrName = event.Managers?.name
-        const teamSchool = event.Teams?.school
-        if (!mgrName || !managerMap[mgrName]) return
-        managerMap[mgrName].totalPoints += event.points || 0
-        const team = managerMap[mgrName].teams.find(t => t.school === teamSchool)
+        const mgr = managerMap[event.manager_id]
+        if (!mgr) return
+        mgr.totalPoints += event.points || 0
+        const team = mgr.teams.find(t => t.id === event.team_id)
         if (team) team.points += event.points || 0
       })
 
@@ -79,14 +79,14 @@ export default function App() {
         mgr.topTeam = mgr.teams[0]
       })
 
-      const sorted = Object.values(managerMap).sort(
-        (a, b) => b.totalPoints - a.totalPoints
-      )
+      const sorted = Object.values(managerMap)
+        .filter(mgr => mgr.teams.length > 0)
+        .sort((a, b) => b.totalPoints - a.totalPoints)
 
       setStandings(sorted)
     } catch (err) {
       console.error(err)
-      setError('Failed to load standings. Check your Supabase connection.')
+      setError(`Error: ${err.message}`)
     } finally {
       setLoading(false)
     }
