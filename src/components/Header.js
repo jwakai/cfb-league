@@ -1,59 +1,68 @@
 import React from 'react'
+import { CFP_LOGO } from '../cfpLogo'
 
 export default function Header({ season, setSeason }) {
   return (
     <header style={{
-      borderBottom: '1px solid var(--border)',
-      marginBottom: 32,
+      background: '#0a0a0a',
       position: 'sticky',
       top: 0,
-      background: 'rgba(10,10,10,0.95)',
-      backdropFilter: 'blur(8px)',
       zIndex: 100
     }}>
       <div style={{
         maxWidth: 900,
         margin: '0 auto',
         padding: '0 16px',
-        height: 60,
+        height: 62,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-          <span style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 28,
-            letterSpacing: '0.04em',
-            color: 'var(--accent)',
-            lineHeight: 1
-          }}>
-            CFB League
-          </span>
-          <span style={{
-            fontSize: 12,
-            color: 'var(--text-muted)',
-            fontWeight: 500,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase'
-          }}>
-            Fantasy
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <img
+            src={CFP_LOGO}
+            alt="College Football Playoff"
+            style={{ height: 40, width: 'auto', objectFit: 'contain', flexShrink: 0 }}
+          />
+          <div style={{ width: 1, height: 28, background: '#333', flexShrink: 0 }} />
+          <div>
+            <div style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 17,
+              fontWeight: 900,
+              letterSpacing: '0.1em',
+              color: '#c9920e',
+              lineHeight: 1
+            }}>
+              Fantasy League
+            </div>
+            <div style={{
+              fontSize: 9,
+              color: '#666',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              marginTop: 2
+            }}>
+              {season} Season
+            </div>
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Season</span>
+          <span style={{ fontSize: 11, color: '#666' }}>Season</span>
           <select
             value={season}
             onChange={e => setSeason(Number(e.target.value))}
             style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border)',
-              color: 'var(--text-primary)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '4px 10px',
-              fontSize: 13,
-              fontFamily: 'var(--font-body)',
+              background: '#1a1a1a',
+              border: '1.5px solid #c9920e',
+              color: '#c9920e',
+              borderRadius: 5,
+              padding: '3px 9px',
+              fontSize: 12,
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              letterSpacing: '0.08em',
               cursor: 'pointer'
             }}
           >
@@ -62,6 +71,7 @@ export default function Header({ season, setSeason }) {
           </select>
         </div>
       </div>
+      <div style={{ height: 2, background: '#c9920e' }} />
     </header>
   )
 }
