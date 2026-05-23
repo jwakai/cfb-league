@@ -21,35 +21,25 @@ export default function App() {
     setError(null)
     try {
       const { data: managers, error: mgrError } = await supabase
-        .from('Managers')
-        .select('*')
+        .from('Managers').select('*')
       if (mgrError) throw mgrError
 
       const { data: teams, error: teamsError } = await supabase
-        .from('Teams')
-        .select('*')
+        .from('Teams').select('*')
       if (teamsError) throw teamsError
 
       const { data: rosters, error: rosterError } = await supabase
-        .from('Managers_Teams')
-        .select('*')
-        .eq('season', season)
+        .from('Managers_Teams').select('*').eq('season', season)
       if (rosterError) throw rosterError
 
       const { data: events, error: eventsError } = await supabase
-        .from('Scoring_Events')
-        .select('*')
-        .eq('season', season)
+        .from('Scoring_Events').select('*').eq('season', season)
       if (eventsError) throw eventsError
 
       const managerMap = {}
 
       managers.forEach(mgr => {
-        managerMap[mgr.id] = {
-          name: mgr.name,
-          totalPoints: 0,
-          teams: []
-        }
+        managerMap[mgr.id] = { name: mgr.name, totalPoints: 0, teams: [] }
       })
 
       rosters.forEach(row => {
@@ -97,21 +87,24 @@ export default function App() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <Header season={season} setSeason={setSeason} />
-      <main style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px 60px' }}>
+
+      <main style={{ maxWidth: 900, margin: '0 auto', padding: '16px 16px 60px' }}>
         {loading && (
-          <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-secondary)' }}>
+          <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
             Loading season data...
           </div>
         )}
+
         {error && (
           <div style={{
             margin: '32px 0', padding: '16px 20px',
-            background: 'var(--red-dim)', border: '1px solid var(--red)',
-            borderRadius: 'var(--radius)', color: 'var(--red)', fontSize: 13
+            background: '#fff0f0', border: '1px solid #ffaaaa',
+            borderRadius: 'var(--radius)', color: '#c0392b', fontSize: 13
           }}>
             {error}
           </div>
         )}
+
         {!loading && !error && !selectedManager && (
           <Standings
             standings={standings}
@@ -120,6 +113,7 @@ export default function App() {
             season={season}
           />
         )}
+
         {!loading && !error && selectedManager && (
           <ManagerDetail
             manager={selectedManager}
@@ -130,6 +124,8 @@ export default function App() {
           />
         )}
       </main>
+
+      <div style={{ height: 2, background: '#c9920e', position: 'fixed', bottom: 0, left: 0, right: 0 }} />
     </div>
   )
 }
