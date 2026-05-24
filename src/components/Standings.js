@@ -27,10 +27,7 @@ const TEAM_ESPN_IDS = {
   'Texas': 251, 'TCU': 2628, 'Washington': 264, 'SMU': 2567,
   'Washington St': 265, 'Arizona': 12, 'Coastal Carolina': 324, 'Oregon St': 204,
   'Alabama': 333, 'Illinois': 356, 'Miami OH': 193, 'Western Kentucky': 98,
-  'Georgia Southern': 290, 'Air Force': 2005, 'UNC': 153, 'Oklahoma St': 197, 
-  'Southern Miss': 2572, 'Army': 349, 'Pittsburgh': 221, 'Purdue': 2509,
-  'Utah St': 328, 'Rice': 242, 'Wyoming': 2751, 'Western Michigan': 2711,
-  'Virginia': 258, 'Kennesaw St': 2908, 'NC St': 152,
+  'Georgia Southern': 290, 'Air Force': 2005, 'UNC': 153, 'Oklahoma St': 197,
 }
 
 function teamLogoUrl(school) {
@@ -247,9 +244,9 @@ function TeamRow({ team }) {
   )
 }
 
-function ManagerRow({ mgr, rank, maxPoints }) {
+function ManagerRow({ mgr, rank, maxPoints, seasonComplete }) {
   const [open, setOpen] = useState(false)
-  const isLeader = rank === 1
+  const isLeader = rank === 1 && seasonComplete
   const barWidth = Math.round((mgr.totalPoints / maxPoints) * 100)
   const topTeam = mgr.topTeam
   const logoUrl = topTeam ? teamLogoUrl(topTeam.school) : null
@@ -271,11 +268,13 @@ function ManagerRow({ mgr, rank, maxPoints }) {
         onClick={() => setOpen(o => !o)}
         style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', cursor: 'pointer' }}
       >
+        {/* Rank number — medals only when season is complete */}
         <div style={{
-          fontFamily: 'var(--font-display)', fontSize: rank <= 3 ? 16 : 14, fontWeight: 900,
-          color: isLeader ? '#c9920e' : 'var(--text-muted)', width: 18, textAlign: 'center', flexShrink: 0
+          fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 900,
+          color: isLeader ? '#c9920e' : 'var(--text-muted)',
+          width: 18, textAlign: 'center', flexShrink: 0
         }}>
-          {rank <= 3 ? MEDAL[rank - 1] : rank}
+          {seasonComplete && rank <= 3 ? MEDAL[rank - 1] : rank}
         </div>
 
         <div style={{
@@ -312,7 +311,7 @@ function ManagerRow({ mgr, rank, maxPoints }) {
               }} />
             ))}
             <span style={{ fontSize: 9, color: 'var(--text-secondary)', marginLeft: 2 }}>
-              {cfpCount === 0 ? 'No teams projected CFP' : `${cfpCount} team${cfpCount > 1 ? 's' : ''} projected CFP`}
+              {cfpCount === 0 ? 'No teams in CFP' : `${cfpCount} team${cfpCount > 1 ? 's' : ''} in CFP`}
             </span>
           </div>
           <div style={{ height: 3, background: '#f2f2f7', borderRadius: 2, overflow: 'hidden' }}>
@@ -348,6 +347,9 @@ function ManagerRow({ mgr, rank, maxPoints }) {
   )
 }
 
+// Set to true at end of season to enable gold highlight, medals, and final standings styling
+const SEASON_COMPLETE = true
+
 export default function Standings({ standings, maxPoints, season }) {
   if (standings.length === 0) {
     return (
@@ -357,24 +359,79 @@ export default function Standings({ standings, maxPoints, season }) {
     )
   }
 
+  const leader = standings[0]
+  const topTeam = leader?.topTeam
+  // Placeholder — will be populated by CFBD API in Phase 5
+  const topTeamRecord = topTeam?.record || null
+  const topTeamTop25 = topTeam?.top25Wins ?? null
+  const topTeamNext = topTeam?.nextOpponent || null
+
+  const topTeamSub = topTeamRecord
+    ? [topTeamRecord, topTeamTop25 !== null ? `${topTeamTop25} Top 25 W` : null, topTeamNext ? `Next: ${topTeamNext}` : null]
+        .filter(Boolean).join(' | ')
+    : 'Off-season'
+
   return (
     <div>
+      {/* Top 3 stat cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
-        {[
-          { label: 'Leader', value: standings[0]?.name, sub: `${standings[0]?.totalPoints?.toLocaleString()} pts` },
-          { label: 'Current week', value: 'Off-season', sub: '2025 final standings' },
-          { label: 'Top team', value: standings[0]?.topTeam?.school, sub: `${standings[0]?.topTeam?.points} pts` },
-        ].map((stat, i) => (
-          <div key={i} style={{
-            background: 'var(--bg-card)', border: '1px solid var(--border)',
-            borderRadius: 'var(--radius)', padding: '12px', position: 'relative', overflow: 'hidden'
-          }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: '#c9920e' }} />
-            <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>{stat.label}</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>{stat.value}</div>
-            <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 3 }}>{stat.sub}</div>
+
+        {/* Current Leader */}
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)', padding: '12px', position: 'relative', overflow: 'hidden'
+        }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: '#c9920e' }} />
+          <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>
+            Current Leader
           </div>
-        ))}
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1, textTransform: 'uppercase' }}>
+            {leader?.name}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 3 }}>
+            {leader?.totalPoints?.toLocaleString()} pts
+          </div>
+        </div>
+
+        {/* Current Week */}
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)', padding: '12px', position: 'relative', overflow: 'hidden'
+        }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: '#c9920e' }} />
+          <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>
+            Current Week
+          </div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1, textTransform: 'uppercase' }}>
+            Off-Season
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 3 }}>
+            {season} final standings
+          </div>
+        </div>
+
+        {/* Top Team — name + pts side by side, record/top25/next below */}
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)', padding: '12px', position: 'relative', overflow: 'hidden'
+        }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: '#c9920e' }} />
+          <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>
+            Top Team
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 4 }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1, textTransform: 'uppercase', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {topTeam?.school}
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 900, color: '#1c1c1e', lineHeight: 1, flexShrink: 0 }}>
+              {topTeam?.points}
+            </div>
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 3 }}>
+            {topTeamSub}
+          </div>
+        </div>
+
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -384,7 +441,7 @@ export default function Standings({ standings, maxPoints, season }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {standings.map((mgr, i) => (
-          <ManagerRow key={mgr.name} mgr={mgr} rank={i + 1} maxPoints={maxPoints} />
+          <ManagerRow key={mgr.name} mgr={mgr} rank={i + 1} maxPoints={maxPoints} seasonComplete={SEASON_COMPLETE} />
         ))}
       </div>
 
