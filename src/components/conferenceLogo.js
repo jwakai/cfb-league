@@ -16,33 +16,32 @@ export function ConferenceLogo({ conference, size = 20 }) {
   const url = CONF_LOGOS[conference]
 
   if (!url) {
-    return (
-      <span style={{
-        fontSize: 9,
-        fontWeight: 700,
-        fontFamily: 'var(--font-display)',
-        letterSpacing: '0.06em',
-        color: '#c9920e',
-        background: '#fdf6e3',
-        border: '1px solid #e5c96a',
-        borderRadius: 4,
-        padding: '1px 5px',
-        whiteSpace: 'nowrap'
-      }}>
-        {conference}
-      </span>
-    )
+    return <span style={{ display: 'inline-block', width: size, height: size }} />
   }
 
   return (
-    <img
-      src={url}
-      alt={conference}
-      style={{ height: size, width: 'auto', objectFit: 'contain', flexShrink: 0 }}
-      onError={e => {
-        e.target.style.display = 'none'
-      }}
-    />
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: size + 4,
+      height: size,
+      flexShrink: 0
+    }}>
+      <img
+        src={url}
+        alt={conference}
+        width={size}
+        height={size}
+        style={{
+          objectFit: 'contain',
+          display: 'block'
+        }}
+        onError={e => {
+          e.target.parentElement.style.display = 'none'
+        }}
+      />
+    </span>
   )
 }
 
