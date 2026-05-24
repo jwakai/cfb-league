@@ -27,7 +27,10 @@ const TEAM_ESPN_IDS = {
   'Texas': 251, 'TCU': 2628, 'Washington': 264, 'SMU': 2567,
   'Washington St': 265, 'Arizona': 12, 'Coastal Carolina': 324, 'Oregon St': 204,
   'Alabama': 333, 'Illinois': 356, 'Miami OH': 193, 'Western Kentucky': 98,
-  'Georgia Southern': 290, 'Air Force': 2005, 'UNC': 153, 'Oklahoma St': 197,
+  'Georgia Southern': 290, 'Air Force': 2005, 'UNC': 153, 'Oklahoma St': 197, 
+  'Southern Miss': 2572, 'Army': 349, 'Pittsburgh': 221, 'Purdue': 2509,
+  'Utah St': 328, 'Rice': 242, 'Wyoming': 2751, 'Western Michigan': 2711,
+  'Virginia': 258, 'Kennesaw St': 2908, 'NC St': 152,
 }
 
 function teamLogoUrl(school) {
