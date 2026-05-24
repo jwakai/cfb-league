@@ -19,6 +19,7 @@ export default function Header({ season, setSeason }) {
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
+        {/* Left: CFP logo + divider + league name, all vertically centered */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <img
             src={CFP_LOGO}
@@ -26,29 +27,19 @@ export default function Header({ season, setSeason }) {
             style={{ height: 40, width: 'auto', objectFit: 'contain', flexShrink: 0 }}
           />
           <div style={{ width: 1, height: 28, background: '#e5e5ea', flexShrink: 0 }} />
-          <div>
-            <div style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 17,
-              fontWeight: 900,
-              letterSpacing: '0.1em',
-              color: '#c9920e',
-              lineHeight: 1
-            }}>
-              LEANBOYZ ROAD TO GLORY
-            </div>
-            <div style={{
-              fontSize: 9,
-              color: '#8e8e93',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              marginTop: 2
-            }}>
-              {season} Season
-            </div>
+          <div style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 17,
+            fontWeight: 900,
+            letterSpacing: '0.1em',
+            color: '#c9920e',
+            lineHeight: 1
+          }}>
+            Fantasy League
           </div>
         </div>
 
+        {/* Right: Season selector */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 11, color: '#8e8e93' }}>Season</span>
           <select
