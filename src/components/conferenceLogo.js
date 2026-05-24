@@ -15,33 +15,22 @@ const CONF_LOGOS = {
 export function ConferenceLogo({ conference, size = 20 }) {
   const url = CONF_LOGOS[conference]
 
-  if (!url) {
-    return <span style={{ display: 'inline-block', width: size, height: size }} />
-  }
+  if (!url) return null
 
   return (
-    <span style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: size + 4,
-      height: size,
-      flexShrink: 0
-    }}>
-      <img
-        src={url}
-        alt={conference}
-        width={size}
-        height={size}
-        style={{
-          objectFit: 'contain',
-          display: 'block'
-        }}
-        onError={e => {
-          e.target.parentElement.style.display = 'none'
-        }}
-      />
-    </span>
+    <img
+      src={url}
+      alt={conference}
+      style={{
+        height: size,
+        width: size,
+        objectFit: 'contain',
+        flexShrink: 0,
+        display: 'inline-block',
+        verticalAlign: 'middle'
+      }}
+      onError={e => { e.target.style.display = 'none' }}
+    />
   )
 }
 
