@@ -4,7 +4,8 @@ import { CFP_LOGO } from '../cfpLogo'
 export default function Header({ season, setSeason }) {
   return (
     <header style={{
-      background: '#0a0a0a',
+      background: 'white',
+      borderBottom: '0.5px solid #e5e5ea',
       position: 'sticky',
       top: 0,
       zIndex: 100
@@ -24,7 +25,7 @@ export default function Header({ season, setSeason }) {
             alt="College Football Playoff"
             style={{ height: 40, width: 'auto', objectFit: 'contain', flexShrink: 0 }}
           />
-          <div style={{ width: 1, height: 28, background: '#333', flexShrink: 0 }} />
+          <div style={{ width: 1, height: 28, background: '#e5e5ea', flexShrink: 0 }} />
           <div>
             <div style={{
               fontFamily: 'var(--font-display)',
@@ -38,7 +39,7 @@ export default function Header({ season, setSeason }) {
             </div>
             <div style={{
               fontSize: 9,
-              color: '#666',
+              color: '#8e8e93',
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
               marginTop: 2
@@ -49,12 +50,12 @@ export default function Header({ season, setSeason }) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 11, color: '#666' }}>Season</span>
+          <span style={{ fontSize: 11, color: '#8e8e93' }}>Season</span>
           <select
             value={season}
             onChange={e => setSeason(Number(e.target.value))}
             style={{
-              background: '#1a1a1a',
+              background: 'white',
               border: '1.5px solid #c9920e',
               color: '#c9920e',
               borderRadius: 5,
