@@ -181,3 +181,149 @@ export default function ManagerDetail({ manager, rank, totalManagers, onBack, se
         onClick={onBack}
         style={{
           background: 'none',
+          border: '1px solid var(--border)',
+          color: 'var(--text-secondary)',
+          borderRadius: 'var(--radius-sm)',
+          padding: '6px 14px',
+          fontSize: 12,
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6
+        }}
+      >
+        ← All managers
+      </button>
+
+      <div style={{
+        background: 'var(--bg-card)',
+        border: '1.5px solid #c9920e',
+        borderRadius: 'var(--radius)',
+        padding: '18px 20px',
+        marginBottom: 12,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 12,
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
+          background: '#c9920e'
+        }} />
+        <div>
+          <div style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 34,
+            fontWeight: 900,
+            color: 'var(--text-primary)',
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            lineHeight: 1
+          }}>
+            {manager.name}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 5 }}>
+            {rank}{getRankSuffix(rank)} place of {totalManagers} managers · {season} season
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 44,
+            fontWeight: 900,
+            color: rank === 1 ? '#c9920e' : 'var(--text-primary)',
+            letterSpacing: '0.02em',
+            lineHeight: 1
+          }}>
+            {totalPoints.toLocaleString()}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            total points
+          </div>
+        </div>
+      </div>
+
+      <div style={{
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius)',
+        padding: '0 16px',
+        marginBottom: 12
+      }}>
+        <div style={{
+          padding: '12px 0',
+          borderBottom: '1px solid var(--border)',
+          fontSize: 10,
+          color: 'var(--text-secondary)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+          fontWeight: 600
+        }}>
+          Team breakdown — tap to expand
+        </div>
+        {manager.teams.map((team) => (
+          <TeamRow key={team.school} team={team} />
+        ))}
+      </div>
+
+      <div style={{
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius)',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          padding: '12px 16px',
+          borderBottom: '1px solid var(--border)',
+          fontSize: 10,
+          color: 'var(--text-secondary)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+          fontWeight: 600
+        }}>
+          Scoring reference
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+          {[
+            { label: 'Regular season win', pts: 10 },
+            { label: 'Top 25 win', pts: 18 },
+            { label: 'Rival win', pts: 30 },
+            { label: 'Conf. championship appearance', pts: 30 },
+            { label: 'Conf. championship win', pts: 60 },
+            { label: 'Non-CFP bowl win', pts: 40 },
+            { label: 'CFP appearance', pts: 25 },
+            { label: 'CFP 1st round bye', pts: 20 },
+            { label: 'CFP Round 1 win', pts: 35 },
+            { label: 'CFP Quarterfinal win', pts: 50 },
+            { label: 'CFP Semifinal win', pts: 70 },
+            { label: 'National championship', pts: 100 },
+          ].map((item, i) => (
+            <div key={i} style={{
+              padding: '9px 16px',
+              borderBottom: i < 10 ? '0.5px solid var(--border)' : 'none',
+              borderRight: i % 2 === 0 ? '0.5px solid var(--border)' : 'none',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 8
+            }}>
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{item.label}</span>
+              <span style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 14,
+                fontWeight: 900,
+                letterSpacing: '0.04em',
+                color: item.pts >= 50 ? '#c9920e' : 'var(--text-primary)'
+              }}>
+                {item.pts}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
