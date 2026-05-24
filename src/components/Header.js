@@ -35,7 +35,7 @@ export default function Header({ season, setSeason }) {
             color: '#c9920e',
             lineHeight: 1
           }}>
-            SEASON LONG PICK-EM
+            ROAD TO GLORY
           </div>
         </div>
 
