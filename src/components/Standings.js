@@ -86,6 +86,94 @@ function TeamRow({ team, openTeam, setOpenTeam }) {
   const schedule = team.schedule || null
 
   return (
+    <div style={{ borderBottoimport React, { useState } from 'react'
+import { ConferenceLogo } from './conferenceLogo'
+
+const MEDAL = ['🥇', '🥈', '🥉']
+
+const TEAM_ESPN_IDS = {
+  'Indiana': 84, 'Boise St': 68, 'Toledo': 2649, 'Clemson': 228,
+  'Louisiana': 309, 'UCF': 2116, 'Mississippi St': 344, 'Michigan St': 127,
+  'Miami': 2390, 'Vanderbilt': 238, 'Cincinnati': 2132, 'Cal': 25,
+  'Texas St': 326, 'Florida': 57, 'Bowling Green': 189, 'UCLA': 26,
+  'Ohio St': 194, 'Duke': 150, 'NC State': 152, 'USF': 58,
+  'Memphis': 235, 'Kansas St': 2306, 'Boston College': 103, 'South Carolina': 2579,
+  'UTSA': 2638, 'USC': 30, 'LSU': 99, 'Baylor': 239,
+  'Liberty': 2335, 'San Jose St': 23, 'Northern Illinois': 2459, 'Virginia Tech': 259,
+  'Ole Miss': 145, 'BYU': 252, 'Oklahoma': 201, 'Michigan': 130,
+  'Stanford': 24, 'Auburn': 2, 'Wisconsin': 275, 'Colorado': 38,
+  'James Madison': 256, 'Jacksonville St': 55, 'Texas A&M': 245, 'Navy': 2426,
+  'Minnesota': 135, 'Notre Dame': 87, 'Georgia Tech': 59, 'West Virginia': 277,
+  'Georgia': 61, 'Ohio': 195, 'Hawaii': 62, 'Iowa St': 66,
+  'Nebraska': 158, 'Florida St': 52, 'Kansas': 2305, 'South Alabama': 6,
+  'Houston': 248, 'Iowa': 2294, 'Missouri': 142, 'Arizona St': 9,
+  'UTEP': 2638, 'Syracuse': 183, 'Colorado St': 36, 'Arkansas': 8,
+  'Texas Tech': 2641, 'Oregon': 2483, 'Tulane': 2116, 'UNLV': 2439,
+  'Louisiana Tech': 2348, 'Pitt': 221, 'Tennessee': 2633, 'Buffalo': 2084,
+  'Utah': 254, 'Louisville': 97, 'Troy': 2653, 'Fresno St': 278,
+  'Penn St': 213, 'Kentucky': 96, 'App St': 2026, 'Marshall': 276,
+  'Texas': 251, 'TCU': 2628, 'Washington': 264, 'SMU': 2567,
+  'Washington St': 265, 'Arizona': 12, 'Coastal Carolina': 324, 'Oregon St': 204,
+  'Alabama': 333, 'Illinois': 356, 'Miami OH': 193, 'Western Kentucky': 98,
+  'Georgia Southern': 290, 'Air Force': 2005, 'UNC': 153, 'Oklahoma St': 197,
+  'Southern Miss': 2572, 'Army': 349, 'Pittsburgh': 221, 'Purdue': 2509,
+  'Utah St': 328, 'Rice': 242, 'Wyoming': 2751, 'Western Michigan': 2711,
+  'Virginia': 258, 'Kennesaw St': 2908, 'NC St': 152,
+}
+
+function teamLogoUrl(school) {
+  const id = TEAM_ESPN_IDS[school]
+  if (!id) return null
+  return `https://a.espncdn.com/i/teamlogos/ncaa/500/${id}.png`
+}
+
+function TeamLogo({ school, size = 22 }) {
+  const url = teamLogoUrl(school)
+  return (
+    <div style={{
+      width: size + 8, height: size + 8,
+      borderRadius: 6,
+      background: '#f2f2f7',
+      border: '0.5px solid var(--border)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexShrink: 0, overflow: 'hidden'
+    }}>
+      {url ? (
+        <img src={url} alt={school}
+          style={{ width: size, height: size, objectFit: 'contain' }}
+          onError={e => { e.target.style.display = 'none' }} />
+      ) : (
+        <span style={{ fontSize: 7, fontWeight: 900, fontFamily: 'var(--font-display)', color: '#c9920e' }}>
+          {school?.substring(0, 4).toUpperCase()}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function StatBox({ label, value, sub }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+        {label}
+      </div>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 900, color: '#1c1c1e', lineHeight: 1 }}>
+        {value}
+      </div>
+      {sub && <div style={{ fontSize: 9, color: 'var(--text-secondary)' }}>{sub}</div>}
+    </div>
+  )
+}
+
+function TeamRow({ team, openTeam, setOpenTeam }) {
+  const open = openTeam === team.school
+
+  // Placeholder values — will be populated by CFBD API in Phase 5
+  const record = team.record || null
+  const top25Wins = team.top25Wins ?? null
+  const schedule = team.schedule || null
+
+  return (
     <div style={{ borderBottom: '0.5px solid var(--border)' }}>
       {/* Collapsed row */}
       <div
@@ -268,14 +356,19 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
 
   return (
     <div style={{
-      background: isLeader ? '#fdf8ef' : 'var(--bg-card)',
-      border: `1.5px solid ${isLeader ? '#c9920e' : 'var(--border)'}`,
+      background: (isLeader || open) ? '#fdf8ef' : 'var(--bg-card)',
+      border: `1.5px solid ${(isLeader || open) ? '#c9920e' : 'var(--border)'}`,
       borderRadius: 'var(--radius)',
       overflow: 'hidden',
-      position: 'relative'
+      position: 'relative',
+      transition: 'background 0.3s ease, border-color 0.3s ease'
     }}>
-      {isLeader && (
-        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: '#c9920e' }} />
+      {(isLeader || open) && (
+        <div style={{
+          position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
+          background: '#c9920e',
+          transition: 'opacity 0.3s ease'
+        }} />
       )}
 
       <div
@@ -285,18 +378,20 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
         {/* Rank number — medals only when season is complete */}
         <div style={{
           fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 900,
-          color: isLeader ? '#c9920e' : 'var(--text-muted)',
-          width: 18, textAlign: 'center', flexShrink: 0
+          color: (isLeader || open) ? '#c9920e' : 'var(--text-muted)',
+          width: 18, textAlign: 'center', flexShrink: 0,
+          transition: 'color 0.3s ease'
         }}>
           {seasonComplete && rank <= 3 ? MEDAL[rank - 1] : rank}
         </div>
 
         <div style={{
           width: 36, height: 36, borderRadius: 'var(--radius-sm)',
-          background: isLeader ? '#fdf6e3' : '#f2f2f7',
-          border: `0.5px solid ${isLeader ? '#e5c96a' : 'var(--border)'}`,
+          background: (isLeader || open) ? '#fdf6e3' : '#f2f2f7',
+          border: `0.5px solid ${(isLeader || open) ? '#e5c96a' : 'var(--border)'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0, overflow: 'hidden'
+          flexShrink: 0, overflow: 'hidden',
+          transition: 'background 0.3s ease, border-color 0.3s ease'
         }}>
           {logoUrl ? (
             <img src={logoUrl} alt={topTeam?.school}
@@ -329,7 +424,11 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
             </span>
           </div>
           <div style={{ height: 3, background: '#f2f2f7', borderRadius: 2, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${barWidth}%`, borderRadius: 2, background: isLeader ? '#c9920e' : '#e5e5ea' }} />
+            <div style={{
+              height: '100%', width: `${barWidth}%`, borderRadius: 2,
+              background: (isLeader || open) ? '#c9920e' : '#e5e5ea',
+              transition: 'background 0.3s ease'
+            }} />
           </div>
         </div>
 
@@ -344,14 +443,15 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
         </div>
 
         <span style={{
-          color: 'var(--text-muted)', fontSize: 12, flexShrink: 0,
-          display: 'inline-block', transition: 'transform 0.2s',
+          color: open ? '#c9920e' : 'var(--text-muted)', fontSize: 12, flexShrink: 0,
+          display: 'inline-block',
+          transition: 'transform 0.3s ease, color 0.3s ease',
           transform: open ? 'rotate(90deg)' : 'rotate(0deg)'
         }}>›</span>
       </div>
 
       {open && (
-        <div className="dropdown-animate" style={{ padding: '0 13px 10px 40px', borderTop: '0.5px solid var(--border)' }}>
+        <div className="dropdown-animate" style={{ padding: '0 13px 10px 40px', borderTop: '0.5px solid #e5c96a' }}>
           {mgr.teams.map(team => (
             <TeamRow key={team.school} team={team} openTeam={openTeam} setOpenTeam={setOpenTeam} />
           ))}
