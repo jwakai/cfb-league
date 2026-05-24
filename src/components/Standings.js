@@ -160,7 +160,7 @@ function TeamRow({ team }) {
                 Rivals
               </div>
               {team.rival_1 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <div style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
                   {[team.rival_1, team.rival_2].map(rival => (
                     <div key={rival} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       {teamLogoUrl(rival) && (
