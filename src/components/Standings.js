@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { ConferenceLogo } from './conferenceLogo'
 
 const MEDAL = ['🥇', '🥈', '🥉']
 
@@ -13,7 +14,7 @@ const TEAM_ESPN_IDS = {
   'Liberty': 2335, 'San Jose St': 23, 'Northern Illinois': 2459, 'Virginia Tech': 259,
   'Ole Miss': 145, 'BYU': 252, 'Oklahoma': 201, 'Michigan': 130,
   'Stanford': 24, 'Auburn': 2, 'Wisconsin': 275, 'Colorado': 38,
-  'James Madison': 2977, 'Jacksonville St': 55, 'Texas A&M': 245, 'Navy': 2426,
+  'James Madison': 256, 'Jacksonville St': 55, 'Texas A&M': 245, 'Navy': 2426,
   'Minnesota': 135, 'Notre Dame': 87, 'Georgia Tech': 59, 'West Virginia': 277,
   'Georgia': 61, 'Ohio': 197, 'Hawaii': 62, 'Iowa St': 66,
   'Nebraska': 158, 'Florida St': 52, 'Kansas': 2305, 'South Alabama': 6,
@@ -36,7 +37,205 @@ function teamLogoUrl(school) {
   return `https://a.espncdn.com/i/teamlogos/ncaa/500/${id}.png`
 }
 
-export default function Standings({ standings, maxPoints, onSelectManager, season }) {
+function TeamRow({ team }) {
+  const [open, setOpen] = useState(false)
+  const logoUrl = teamLogoUrl(team.school)
+
+  return (
+    <div style={{ borderBottom: '0.5px solid var(--border)' }}>
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 0', cursor: 'pointer'
+        }}
+      >
+        <div style={{
+          width: 30, height: 30, borderRadius: 6,
+          background: '#f2f2f7', border: '0.5px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0, overflow: 'hidden'
+        }}>
+          {logoUrl ? (
+            <img src={logoUrl} alt={team.school}
+              style={{ width: 22, height: 22, objectFit: 'contain' }}
+              onError={e => { e.target.style.display = 'none' }} />
+          ) : (
+            <span style={{ fontSize: 7, fontWeight: 900, fontFamily: 'var(--font-display)', color: '#c9920e' }}>
+              {team.school?.substring(0, 4).toUpperCase()}
+            </span>
+          )}
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+            <span style={{
+              fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 900,
+              color: 'var(--text-primary)', letterSpacing: '0.04em', textTransform: 'uppercase'
+            }}>
+              {team.school}
+            </span>
+            <ConferenceLogo conference={team.conference} size={14} />
+          </div>
+          {team.rival_1 && (
+            <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
+              Rivals: {team.rival_1} · {team.rival_2}
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <span style={{
+            fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 900,
+            color: '#c9920e', letterSpacing: '0.02em'
+          }}>
+            {team.points}
+          </span>
+          <span style={{
+            fontSize: 11, color: 'var(--text-muted)',
+            display: 'inline-block', transition: 'transform 0.2s',
+            transform: open ? 'rotate(90deg)' : 'rotate(0deg)'
+          }}>›</span>
+        </div>
+      </div>
+
+      {open && (
+        <div style={{
+          background: '#fafafa', borderRadius: 8, padding: '10px 12px',
+          marginBottom: 10, border: '0.5px solid var(--border)'
+        }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div>
+              <div style={{ fontSize: 9, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Conference</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <ConferenceLogo conference={team.conference} size={16} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{team.conference}</span>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 9, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Points earned</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 900, color: '#c9920e' }}>{team.points}</div>
+            </div>
+            {team.rival_1 && (
+              <div style={{ gridColumn: '1 / -1' }}>
+                <div style={{ fontSize: 9, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Designated rivals</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[team.rival_1, team.rival_2].map(rival => (
+                    <div key={rival} style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      background: 'white', border: '0.5px solid var(--border)',
+                      borderRadius: 6, padding: '4px 8px'
+                    }}>
+                      {teamLogoUrl(rival) && (
+                        <img src={teamLogoUrl(rival)} alt={rival}
+                          style={{ width: 16, height: 16, objectFit: 'contain' }}
+                          onError={e => { e.target.style.display = 'none' }} />
+                      )}
+                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>{rival}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ManagerRow({ mgr, rank, maxPoints }) {
+  const [open, setOpen] = useState(false)
+  const isLeader = rank === 1
+  const barWidth = Math.round((mgr.totalPoints / maxPoints) * 100)
+  const topTeam = mgr.topTeam
+  const logoUrl = topTeam ? teamLogoUrl(topTeam.school) : null
+
+  return (
+    <div style={{
+      background: isLeader ? '#fdf8ef' : 'var(--bg-card)',
+      border: `1.5px solid ${isLeader ? '#c9920e' : 'var(--border)'}`,
+      borderRadius: 'var(--radius)',
+      overflow: 'hidden',
+      position: 'relative'
+    }}>
+      {isLeader && (
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: '#c9920e' }} />
+      )}
+
+      {/* Main row — click to expand */}
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', cursor: 'pointer' }}
+      >
+        <div style={{
+          fontFamily: 'var(--font-display)', fontSize: rank <= 3 ? 16 : 14, fontWeight: 900,
+          color: isLeader ? '#c9920e' : 'var(--text-muted)', width: 18, textAlign: 'center', flexShrink: 0
+        }}>
+          {rank <= 3 ? MEDAL[rank - 1] : rank}
+        </div>
+
+        <div style={{
+          width: 36, height: 36, borderRadius: 'var(--radius-sm)',
+          background: isLeader ? '#fdf6e3' : '#f2f2f7',
+          border: `0.5px solid ${isLeader ? '#e5c96a' : 'var(--border)'}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0, overflow: 'hidden'
+        }}>
+          {logoUrl ? (
+            <img src={logoUrl} alt={topTeam?.school}
+              style={{ width: 26, height: 26, objectFit: 'contain' }}
+              onError={e => { e.target.style.display = 'none' }} />
+          ) : (
+            <span style={{ fontSize: 8, fontWeight: 900, fontFamily: 'var(--font-display)', color: '#c9920e' }}>
+              {topTeam?.school?.substring(0, 4).toUpperCase()}
+            </span>
+          )}
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 900,
+            color: 'var(--text-primary)', letterSpacing: '0.06em',
+            textTransform: 'uppercase', lineHeight: 1, marginBottom: 5
+          }}>
+            {mgr.name}
+          </div>
+          <div style={{ height: 3, background: '#f2f2f7', borderRadius: 2, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${barWidth}%`, borderRadius: 2, background: isLeader ? '#c9920e' : '#e5e5ea' }} />
+          </div>
+        </div>
+
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{
+            fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 900,
+            color: isLeader ? '#c9920e' : 'var(--text-muted)', lineHeight: 1
+          }}>
+            {mgr.totalPoints.toLocaleString()}
+          </div>
+          <div style={{ fontSize: 8, color: 'var(--text-secondary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>pts</div>
+        </div>
+
+        <span style={{
+          color: 'var(--text-muted)', fontSize: 12, flexShrink: 0,
+          display: 'inline-block', transition: 'transform 0.2s',
+          transform: open ? 'rotate(90deg)' : 'rotate(0deg)'
+        }}>›</span>
+      </div>
+
+      {/* Expanded team list */}
+      {open && (
+        <div style={{ padding: '0 13px 10px 13px', borderTop: '0.5px solid var(--border)' }}>
+          {mgr.teams.map(team => (
+            <TeamRow key={team.school} team={team} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function Standings({ standings, maxPoints, season }) {
   if (standings.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-secondary)' }}>
@@ -47,157 +246,33 @@ export default function Standings({ standings, maxPoints, onSelectManager, seaso
 
   return (
     <div>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: 10,
-        marginBottom: 24
-      }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
         {[
           { label: 'Leader', value: standings[0]?.name, sub: `${standings[0]?.totalPoints?.toLocaleString()} pts` },
           { label: 'Current week', value: 'Off-season', sub: '2025 final standings' },
           { label: 'Top team', value: standings[0]?.topTeam?.school, sub: `${standings[0]?.topTeam?.points} pts` },
         ].map((stat, i) => (
           <div key={i} style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius)',
-            padding: '12px 12px',
-            position: 'relative',
-            overflow: 'hidden'
+            background: 'var(--bg-card)', border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)', padding: '12px', position: 'relative', overflow: 'hidden'
           }}>
-            <div style={{
-              position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-              background: '#c9920e'
-            }} />
-            <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>
-              {stat.label}
-            </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
-              {stat.value}
-            </div>
-            <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 3 }}>
-              {stat.sub}
-            </div>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: '#c9920e' }} />
+            <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>{stat.label}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>{stat.value}</div>
+            <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 3 }}>{stat.sub}</div>
           </div>
         ))}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
-          Standings
-        </span>
+        <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Standings</span>
         <div style={{ flex: 1, height: 0.5, background: 'var(--border-light)' }} />
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {standings.map((mgr, i) => {
-          const barWidth = Math.round((mgr.totalPoints / maxPoints) * 100)
-          const isLeader = i === 0
-          const topTeam = mgr.topTeam
-          const logoUrl = topTeam ? teamLogoUrl(topTeam.school) : null
-
-          return (
-            <button
-              key={mgr.name}
-              onClick={() => onSelectManager(mgr)}
-              style={{
-                background: isLeader ? '#fdf8ef' : 'var(--bg-card)',
-                border: `1.5px solid ${isLeader ? '#c9920e' : 'var(--border)'}`,
-                borderRadius: 'var(--radius)',
-                padding: '11px 13px',
-                textAlign: 'left',
-                width: '100%',
-                cursor: 'pointer',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-            >
-              {isLeader && (
-                <div style={{
-                  position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
-                  background: '#c9920e'
-                }} />
-              )}
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                <div style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: i < 3 ? 16 : 14,
-                  fontWeight: 900,
-                  color: isLeader ? '#c9920e' : 'var(--text-muted)',
-                  width: 18,
-                  textAlign: 'center',
-                  flexShrink: 0
-                }}>
-                  {i < 3 ? MEDAL[i] : `${i + 1}`}
-                </div>
-
-                <div style={{
-                  width: 36, height: 36,
-                  borderRadius: 'var(--radius-sm)',
-                  background: isLeader ? '#fdf6e3' : '#f2f2f7',
-                  border: `0.5px solid ${isLeader ? '#e5c96a' : 'var(--border)'}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0, overflow: 'hidden'
-                }}>
-                  {logoUrl ? (
-                    <img
-                      src={logoUrl}
-                      alt={topTeam?.school}
-                      style={{ width: 26, height: 26, objectFit: 'contain' }}
-                      onError={e => { e.target.style.display = 'none' }}
-                    />
-                  ) : (
-                    <span style={{ fontSize: 8, fontWeight: 900, fontFamily: 'var(--font-display)', color: '#c9920e' }}>
-                      {topTeam?.school?.substring(0, 4).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 16,
-                    fontWeight: 900,
-                    color: 'var(--text-primary)',
-                    letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
-                    lineHeight: 1,
-                    marginBottom: 5
-                  }}>
-                    {mgr.name}
-                  </div>
-                  <div style={{ height: 3, background: '#f2f2f7', borderRadius: 2, overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${barWidth}%`,
-                      borderRadius: 2,
-                      background: isLeader ? '#c9920e' : '#e5e5ea'
-                    }} />
-                  </div>
-                </div>
-
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 20,
-                    fontWeight: 900,
-                    color: isLeader ? '#c9920e' : 'var(--text-muted)',
-                    lineHeight: 1
-                  }}>
-                    {mgr.totalPoints.toLocaleString()}
-                  </div>
-                  <div style={{ fontSize: 8, color: 'var(--text-secondary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                    pts
-                  </div>
-                </div>
-
-                <span style={{ color: 'var(--text-muted)', fontSize: 12, flexShrink: 0 }}>›</span>
-              </div>
-            </button>
-          )
-        })}
+        {standings.map((mgr, i) => (
+          <ManagerRow key={mgr.name} mgr={mgr} rank={i + 1} maxPoints={maxPoints} />
+        ))}
       </div>
 
       <div style={{ marginTop: 14, textAlign: 'center', fontSize: 10, color: 'var(--text-muted)' }}>
