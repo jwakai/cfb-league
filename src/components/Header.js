@@ -35,7 +35,7 @@ export default function Header({ season, setSeason }) {
               color: '#c9920e',
               lineHeight: 1
             }}>
-              LEANBOYZ FANTASY LEAGUE
+              LEANBOYZ ROAD TO GLORY
             </div>
             <div style={{
               fontSize: 9,
