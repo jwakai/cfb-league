@@ -381,6 +381,21 @@ export default function Standings({ standings, maxPoints, season }) {
       {/* Top 3 stat cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
 
+        {/* Current Week */}
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)', padding: '12px', position: 'relative', overflow: 'hidden',
+          textAlign: 'center'
+        }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: '#c9920e' }} />
+          <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 6 }}>
+            Current Week
+          </div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1, textTransform: 'uppercase' }}>
+            Off-Season
+          </div>
+        </div>
+
         {/* Season Leader */}
         <div style={{
           background: 'var(--bg-card)', border: '1px solid var(--border)',
@@ -396,21 +411,6 @@ export default function Standings({ standings, maxPoints, season }) {
           </div>
           <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 4 }}>
             {leader?.totalPoints?.toLocaleString()} pts
-          </div>
-        </div>
-
-        {/* Current Week */}
-        <div style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
-          borderRadius: 'var(--radius)', padding: '12px', position: 'relative', overflow: 'hidden',
-          textAlign: 'center'
-        }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: '#c9920e' }} />
-          <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 6 }}>
-            Current Week
-          </div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1, textTransform: 'uppercase' }}>
-            Off-Season
           </div>
         </div>
 
