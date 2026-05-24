@@ -28,6 +28,9 @@ const TEAM_ESPN_IDS = {
   'Washington St': 265, 'Arizona': 12, 'Coastal Carolina': 324, 'Oregon St': 204,
   'Alabama': 333, 'Illinois': 356, 'Miami OH': 193, 'Western Kentucky': 98,
   'Georgia Southern': 290, 'Air Force': 2005, 'UNC': 153, 'Oklahoma St': 197,
+  'Southern Miss': 2572, 'Army': 349, 'Pittsburgh': 221, 'Purdue': 2509, 'Utah St': 328,
+  'Rice': 242, 'Wyoming': 2751, 'Western Michigan': 2711, 'Virginia': 258,
+  'Kennesaw St': 2908, 'NC St': 152,
 }
 
 function teamLogoUrl(school) {
@@ -128,7 +131,7 @@ function TeamRow({ team }) {
 
       {/* Expanded detail */}
       {open && (
-        <div style={{
+        <div className="dropdown-animate" style={{
           background: '#fafafa', borderRadius: 8, padding: '12px',
           marginBottom: 10, border: '0.5px solid var(--border)'
         }}>
@@ -337,7 +340,7 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete }) {
       </div>
 
       {open && (
-        <div style={{ padding: '0 13px 10px 40px', borderTop: '0.5px solid var(--border)' }}>
+        <div className="dropdown-animate" style={{ padding: '0 13px 10px 40px', borderTop: '0.5px solid var(--border)' }}>
           {mgr.teams.map(team => (
             <TeamRow key={team.school} team={team} />
           ))}
