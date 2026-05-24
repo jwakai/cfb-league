@@ -60,11 +60,31 @@ function TeamLogo({ school, size = 22 }) {
   )
 }
 
+function StatBox({ label, value, sub }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+        {label}
+      </div>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 900, color: '#1c1c1e', lineHeight: 1 }}>
+        {value}
+      </div>
+      {sub && <div style={{ fontSize: 9, color: 'var(--text-secondary)' }}>{sub}</div>}
+    </div>
+  )
+}
+
 function TeamRow({ team }) {
   const [open, setOpen] = useState(false)
 
+  // Placeholder values — will be populated by CFBD API in Phase 5
+  const record = team.record || null
+  const top25Wins = team.top25Wins ?? null
+  const schedule = team.schedule || null
+
   return (
     <div style={{ borderBottom: '0.5px solid var(--border)' }}>
+      {/* Collapsed row */}
       <div
         onClick={() => setOpen(o => !o)}
         style={{
@@ -72,7 +92,6 @@ function TeamRow({ team }) {
           padding: '10px 0', cursor: 'pointer'
         }}
       >
-        {/* Larger logo box aligned with standings */}
         <TeamLogo school={team.school} size={26} />
 
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -87,12 +106,8 @@ function TeamRow({ team }) {
               <ConferenceLogo conference={team.conference} size={14} />
             )}
           </div>
-          {/* Record and upcoming opponent — shown during season, off-season message otherwise */}
           <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
-            {team.record
-              ? `${team.record}${team.nextOpponent ? ` · Next: ${team.nextOpponent}` : ''}`
-              : 'Off-season'
-            }
+            {record ? `${record}${team.nextOpponent ? ` · Next: ${team.nextOpponent}` : ''}` : 'Off-season'}
           </div>
         </div>
 
@@ -111,48 +126,118 @@ function TeamRow({ team }) {
         </div>
       </div>
 
+      {/* Expanded detail */}
       {open && (
         <div style={{
-          background: '#fafafa', borderRadius: 8, padding: '10px 12px',
+          background: '#fafafa', borderRadius: 8, padding: '12px',
           marginBottom: 10, border: '0.5px solid var(--border)'
         }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+
+          {/* Top stats row: Record · Top 25 Wins · Rivals · Conference */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: 8,
+            paddingBottom: 12,
+            borderBottom: '0.5px solid var(--border)',
+            marginBottom: 12
+          }}>
+            <StatBox
+              label="Record"
+              value={record || '—'}
+              sub={record ? null : 'Off-season'}
+            />
+            <StatBox
+              label="Top 25 Wins"
+              value={top25Wins !== null ? top25Wins : '—'}
+              sub={top25Wins === null ? 'Off-season' : null}
+            />
             <div>
-              <div style={{ fontSize: 9, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Conference</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                {team.conference !== 'Independent'
-                  ? <ConferenceLogo conference={team.conference} size={16} />
-                  : null
-                }
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{team.conference}</span>
+              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>
+                Rivals
               </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 9, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Points earned</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 900, color: '#1c1c1e' }}>{team.points}</div>
-            </div>
-            {team.rival_1 && (
-              <div style={{ gridColumn: '1 / -1' }}>
-                <div style={{ fontSize: 9, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Designated rivals</div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {team.rival_1 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                   {[team.rival_1, team.rival_2].map(rival => (
-                    <div key={rival} style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      background: 'white', border: '0.5px solid var(--border)',
-                      borderRadius: 6, padding: '4px 8px'
-                    }}>
+                    <div key={rival} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       {teamLogoUrl(rival) && (
                         <img src={teamLogoUrl(rival)} alt={rival}
-                          style={{ width: 16, height: 16, objectFit: 'contain' }}
+                          style={{ width: 14, height: 14, objectFit: 'contain' }}
                           onError={e => { e.target.style.display = 'none' }} />
                       )}
-                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>{rival}</span>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: '#1c1c1e' }}>{rival}</span>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>—</span>
+              )}
+            </div>
+            <div>
+              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>
+                Conference
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                {team.conference !== 'Independent' && (
+                  <ConferenceLogo conference={team.conference} size={16} />
+                )}
+                <span style={{ fontSize: 10, fontWeight: 600, color: '#1c1c1e' }}>{team.conference}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Schedule section */}
+          <div>
+            <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 8 }}>
+              2025 Schedule
+            </div>
+            {schedule && schedule.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {schedule.map((game, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '5px 0',
+                    borderBottom: i < schedule.length - 1 ? '0.5px solid #f0f0f0' : 'none'
+                  }}>
+                    <span style={{ fontSize: 9, color: 'var(--text-muted)', width: 30, flexShrink: 0 }}>
+                      Wk {game.week}
+                    </span>
+                    <span style={{ fontSize: 9, color: 'var(--text-secondary)', width: 16, flexShrink: 0 }}>
+                      {game.home ? 'vs' : 'at'}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
+                      {teamLogoUrl(game.opponent) && (
+                        <img src={teamLogoUrl(game.opponent)} alt={game.opponent}
+                          style={{ width: 14, height: 14, objectFit: 'contain', flexShrink: 0 }}
+                          onError={e => { e.target.style.display = 'none' }} />
+                      )}
+                      <span style={{ fontSize: 10, color: '#1c1c1e', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {game.opponent}
+                      </span>
+                    </div>
+                    {game.result && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, flexShrink: 0,
+                        color: game.result === 'W' ? '#2d7a3a' : '#c0392b',
+                        background: game.result === 'W' ? '#eaf5ec' : '#fdf0ef',
+                        padding: '1px 6px', borderRadius: 4
+                      }}>
+                        {game.result}
+                      </span>
+                    )}
+                    {!game.result && (
+                      <span style={{ fontSize: 9, color: 'var(--text-muted)', flexShrink: 0 }}>—</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                Schedule will populate automatically when the 2026 season begins.
               </div>
             )}
           </div>
+
         </div>
       )}
     </div>
@@ -165,8 +250,6 @@ function ManagerRow({ mgr, rank, maxPoints }) {
   const barWidth = Math.round((mgr.totalPoints / maxPoints) * 100)
   const topTeam = mgr.topTeam
   const logoUrl = topTeam ? teamLogoUrl(topTeam.school) : null
-
-  // Count teams projected in CFP top 12 (placeholder — will be live during season)
   const cfpCount = mgr.teams.filter(t => t.cfpProjected).length
 
   return (
@@ -218,13 +301,11 @@ function ManagerRow({ mgr, rank, maxPoints }) {
           }}>
             {mgr.name}
           </div>
-          {/* CFP projection dots */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
             {[0, 1, 2].map(i => (
               <div key={i} style={{
                 width: 6, height: 6, borderRadius: '50%',
-                background: i < cfpCount ? '#c9920e' : '#e5e5ea',
-                flexShrink: 0
+                background: i < cfpCount ? '#c9920e' : '#e5e5ea', flexShrink: 0
               }} />
             ))}
             <span style={{ fontSize: 9, color: 'var(--text-secondary)', marginLeft: 2 }}>
