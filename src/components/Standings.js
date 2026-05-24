@@ -254,7 +254,7 @@ function ManagerRow({ mgr, rank, maxPoints }) {
       </div>
 
       {open && (
-        <div style={{ padding: '0 13px 10px 13px', borderTop: '0.5px solid var(--border)' }}>
+        <div style={{ padding: '0 13px 10px 40px', borderTop: '0.5px solid var(--border)' }}>
           {mgr.teams.map(team => (
             <TeamRow key={team.school} team={team} />
           ))}
