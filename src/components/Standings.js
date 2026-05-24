@@ -77,8 +77,8 @@ function StatBox({ label, value, sub }) {
   )
 }
 
-function TeamRow({ team }) {
-  const [open, setOpen] = useState(false)
+function TeamRow({ team, openTeam, setOpenTeam }) {
+  const open = openTeam === team.school
 
   // Placeholder values — will be populated by CFBD API in Phase 5
   const record = team.record || null
@@ -89,7 +89,7 @@ function TeamRow({ team }) {
     <div style={{ borderBottom: '0.5px solid var(--border)' }}>
       {/* Collapsed row */}
       <div
-        onClick={() => setOpen(o => !o)}
+        onClick={() => setOpenTeam(open ? null : team.school)}
         style={{
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '10px 0', cursor: 'pointer'
@@ -247,13 +247,24 @@ function TeamRow({ team }) {
   )
 }
 
-function ManagerRow({ mgr, rank, maxPoints, seasonComplete }) {
-  const [open, setOpen] = useState(false)
+function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpenManager }) {
+  const [openTeam, setOpenTeam] = useState(null)
+  const open = openManager === mgr.name
   const isLeader = rank === 1 && seasonComplete
   const barWidth = Math.round((mgr.totalPoints / maxPoints) * 100)
   const topTeam = mgr.topTeam
   const logoUrl = topTeam ? teamLogoUrl(topTeam.school) : null
   const cfpCount = mgr.teams.filter(t => t.cfpProjected).length
+
+  function handleToggle() {
+    if (open) {
+      setOpenManager(null)
+      setOpenTeam(null)
+    } else {
+      setOpenManager(mgr.name)
+      setOpenTeam(null)
+    }
+  }
 
   return (
     <div style={{
@@ -268,7 +279,7 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete }) {
       )}
 
       <div
-        onClick={() => setOpen(o => !o)}
+        onClick={handleToggle}
         style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', cursor: 'pointer' }}
       >
         {/* Rank number — medals only when season is complete */}
@@ -342,7 +353,7 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete }) {
       {open && (
         <div className="dropdown-animate" style={{ padding: '0 13px 10px 40px', borderTop: '0.5px solid var(--border)' }}>
           {mgr.teams.map(team => (
-            <TeamRow key={team.school} team={team} />
+            <TeamRow key={team.school} team={team} openTeam={openTeam} setOpenTeam={setOpenTeam} />
           ))}
         </div>
       )}
@@ -354,6 +365,8 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete }) {
 const SEASON_COMPLETE = true
 
 export default function Standings({ standings, maxPoints, season }) {
+  const [openManager, setOpenManager] = useState(null)
+
   if (standings.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-secondary)' }}>
@@ -453,7 +466,7 @@ export default function Standings({ standings, maxPoints, season }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {standings.map((mgr, i) => (
-          <ManagerRow key={mgr.name} mgr={mgr} rank={i + 1} maxPoints={maxPoints} seasonComplete={SEASON_COMPLETE} />
+          <ManagerRow key={mgr.name} mgr={mgr} rank={i + 1} maxPoints={maxPoints} seasonComplete={SEASON_COMPLETE} openManager={openManager} setOpenManager={setOpenManager} />
         ))}
       </div>
 
