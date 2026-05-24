@@ -35,7 +35,7 @@ export default function Header({ season, setSeason }) {
             color: '#c9920e',
             lineHeight: 1
           }}>
-            DABOYZ          ROAD TO GLORY
+            ROAD TO GLORY
           </div>
         </div>
 
