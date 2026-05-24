@@ -4,11 +4,11 @@ import { ConferenceLogo } from './conferenceLogo'
 const MEDAL = ['🥇', '🥈', '🥉']
 
 const TEAM_ESPN_IDS = {
-  'Indiana': 84, 'Boise St': 68, 'Toledo': 252, 'Clemson': 228,
+  'Indiana': 84, 'Boise St': 68, 'Toledo': 2649, 'Clemson': 228,
   'Louisiana': 309, 'UCF': 2116, 'Mississippi St': 344, 'Michigan St': 127,
   'Miami': 2390, 'Vanderbilt': 238, 'Cincinnati': 2132, 'Cal': 25,
   'Texas St': 326, 'Florida': 57, 'Bowling Green': 189, 'UCLA': 26,
-  'Ohio St': 194, 'Duke': 150, 'NC St': 152, 'USF': 58,
+  'Ohio St': 194, 'Duke': 150, 'NC State': 152, 'USF': 58,
   'Memphis': 235, 'Kansas St': 2306, 'Boston College': 103, 'South Carolina': 2579,
   'UTSA': 2638, 'USC': 30, 'LSU': 99, 'Baylor': 239,
   'Liberty': 2335, 'San Jose St': 23, 'Northern Illinois': 2459, 'Virginia Tech': 259,
@@ -16,19 +16,18 @@ const TEAM_ESPN_IDS = {
   'Stanford': 24, 'Auburn': 2, 'Wisconsin': 275, 'Colorado': 38,
   'James Madison': 256, 'Jacksonville St': 55, 'Texas A&M': 245, 'Navy': 2426,
   'Minnesota': 135, 'Notre Dame': 87, 'Georgia Tech': 59, 'West Virginia': 277,
-  'Georgia': 61, 'Ohio': 197, 'Hawaii': 62, 'Iowa St': 66,
+  'Georgia': 61, 'Ohio': 195, 'Hawaii': 62, 'Iowa St': 66,
   'Nebraska': 158, 'Florida St': 52, 'Kansas': 2305, 'South Alabama': 6,
   'Houston': 248, 'Iowa': 2294, 'Missouri': 142, 'Arizona St': 9,
   'UTEP': 2638, 'Syracuse': 183, 'Colorado St': 36, 'Arkansas': 8,
   'Texas Tech': 2641, 'Oregon': 2483, 'Tulane': 2116, 'UNLV': 2439,
-  'Louisiana Tech': 2338, 'Pitt': 221, 'Tennessee': 2633, 'Buffalo': 2084,
-  'Utah': 254, 'Louisville': 97, 'Troy': 231, 'Fresno St': 278,
+  'Louisiana Tech': 2337, 'Pitt': 221, 'Tennessee': 2633, 'Buffalo': 2084,
+  'Utah': 254, 'Louisville': 97, 'Troy': 2653, 'Fresno St': 278,
   'Penn St': 213, 'Kentucky': 96, 'App St': 2026, 'Marshall': 276,
   'Texas': 251, 'TCU': 2628, 'Washington': 264, 'SMU': 2567,
   'Washington St': 265, 'Arizona': 12, 'Coastal Carolina': 324, 'Oregon St': 204,
-  'Alabama': 333, 'Illinois': 356, 'Miami OH': 193, 'Western Kentucky': 2729,
+  'Alabama': 333, 'Illinois': 356, 'Miami OH': 193, 'Western Kentucky': 98,
   'Georgia Southern': 290, 'Air Force': 2005, 'UNC': 153, 'Oklahoma St': 197,
-  'NC State': 152,
 }
 
 function teamLogoUrl(school) {
@@ -37,9 +36,32 @@ function teamLogoUrl(school) {
   return `https://a.espncdn.com/i/teamlogos/ncaa/500/${id}.png`
 }
 
+function TeamLogo({ school, size = 22 }) {
+  const url = teamLogoUrl(school)
+  return (
+    <div style={{
+      width: size + 8, height: size + 8,
+      borderRadius: 6,
+      background: '#f2f2f7',
+      border: '0.5px solid var(--border)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexShrink: 0, overflow: 'hidden'
+    }}>
+      {url ? (
+        <img src={url} alt={school}
+          style={{ width: size, height: size, objectFit: 'contain' }}
+          onError={e => { e.target.style.display = 'none' }} />
+      ) : (
+        <span style={{ fontSize: 7, fontWeight: 900, fontFamily: 'var(--font-display)', color: '#c9920e' }}>
+          {school?.substring(0, 4).toUpperCase()}
+        </span>
+      )}
+    </div>
+  )
+}
+
 function TeamRow({ team }) {
   const [open, setOpen] = useState(false)
-  const logoUrl = teamLogoUrl(team.school)
 
   return (
     <div style={{ borderBottom: '0.5px solid var(--border)' }}>
@@ -50,22 +72,8 @@ function TeamRow({ team }) {
           padding: '10px 0', cursor: 'pointer'
         }}
       >
-        <div style={{
-          width: 30, height: 30, borderRadius: 6,
-          background: '#f2f2f7', border: '0.5px solid var(--border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0, overflow: 'hidden'
-        }}>
-          {logoUrl ? (
-            <img src={logoUrl} alt={team.school}
-              style={{ width: 22, height: 22, objectFit: 'contain' }}
-              onError={e => { e.target.style.display = 'none' }} />
-          ) : (
-            <span style={{ fontSize: 7, fontWeight: 900, fontFamily: 'var(--font-display)', color: '#c9920e' }}>
-              {team.school?.substring(0, 4).toUpperCase()}
-            </span>
-          )}
-        </div>
+        {/* Larger logo box aligned with standings */}
+        <TeamLogo school={team.school} size={26} />
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
@@ -75,19 +83,23 @@ function TeamRow({ team }) {
             }}>
               {team.school}
             </span>
-            <ConferenceLogo conference={team.conference} size={14} />
+            {team.conference !== 'Independent' && (
+              <ConferenceLogo conference={team.conference} size={14} />
+            )}
           </div>
-          {team.rival_1 && (
-            <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
-              Rivals: {team.rival_1} · {team.rival_2}
-            </div>
-          )}
+          {/* Record and upcoming opponent — shown during season, off-season message otherwise */}
+          <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
+            {team.record
+              ? `${team.record}${team.nextOpponent ? ` · Next: ${team.nextOpponent}` : ''}`
+              : 'Off-season'
+            }
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <span style={{
             fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 900,
-            color: '#c9920e', letterSpacing: '0.02em'
+            color: '#1c1c1e', letterSpacing: '0.02em'
           }}>
             {team.points}
           </span>
@@ -108,13 +120,16 @@ function TeamRow({ team }) {
             <div>
               <div style={{ fontSize: 9, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Conference</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <ConferenceLogo conference={team.conference} size={16} />
+                {team.conference !== 'Independent'
+                  ? <ConferenceLogo conference={team.conference} size={16} />
+                  : null
+                }
                 <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{team.conference}</span>
               </div>
             </div>
             <div>
               <div style={{ fontSize: 9, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Points earned</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 900, color: '#c9920e' }}>{team.points}</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 900, color: '#1c1c1e' }}>{team.points}</div>
             </div>
             {team.rival_1 && (
               <div style={{ gridColumn: '1 / -1' }}>
@@ -151,6 +166,9 @@ function ManagerRow({ mgr, rank, maxPoints }) {
   const topTeam = mgr.topTeam
   const logoUrl = topTeam ? teamLogoUrl(topTeam.school) : null
 
+  // Count teams projected in CFP top 12 (placeholder — will be live during season)
+  const cfpCount = mgr.teams.filter(t => t.cfpProjected).length
+
   return (
     <div style={{
       background: isLeader ? '#fdf8ef' : 'var(--bg-card)',
@@ -163,7 +181,6 @@ function ManagerRow({ mgr, rank, maxPoints }) {
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: '#c9920e' }} />
       )}
 
-      {/* Main row — click to expand */}
       <div
         onClick={() => setOpen(o => !o)}
         style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', cursor: 'pointer' }}
@@ -197,9 +214,22 @@ function ManagerRow({ mgr, rank, maxPoints }) {
           <div style={{
             fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 900,
             color: 'var(--text-primary)', letterSpacing: '0.06em',
-            textTransform: 'uppercase', lineHeight: 1, marginBottom: 5
+            textTransform: 'uppercase', lineHeight: 1, marginBottom: 4
           }}>
             {mgr.name}
+          </div>
+          {/* CFP projection dots */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+            {[0, 1, 2].map(i => (
+              <div key={i} style={{
+                width: 6, height: 6, borderRadius: '50%',
+                background: i < cfpCount ? '#c9920e' : '#e5e5ea',
+                flexShrink: 0
+              }} />
+            ))}
+            <span style={{ fontSize: 9, color: 'var(--text-secondary)', marginLeft: 2 }}>
+              {cfpCount === 0 ? 'No teams projected CFP' : `${cfpCount} team${cfpCount > 1 ? 's' : ''} projected CFP`}
+            </span>
           </div>
           <div style={{ height: 3, background: '#f2f2f7', borderRadius: 2, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${barWidth}%`, borderRadius: 2, background: isLeader ? '#c9920e' : '#e5e5ea' }} />
@@ -209,7 +239,7 @@ function ManagerRow({ mgr, rank, maxPoints }) {
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           <div style={{
             fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 900,
-            color: isLeader ? '#c9920e' : 'var(--text-muted)', lineHeight: 1
+            color: '#1c1c1e', lineHeight: 1
           }}>
             {mgr.totalPoints.toLocaleString()}
           </div>
@@ -223,7 +253,6 @@ function ManagerRow({ mgr, rank, maxPoints }) {
         }}>›</span>
       </div>
 
-      {/* Expanded team list */}
       {open && (
         <div style={{ padding: '0 13px 10px 13px', borderTop: '0.5px solid var(--border)' }}>
           {mgr.teams.map(team => (
