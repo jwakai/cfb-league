@@ -73,6 +73,14 @@ export default function App() {
         .filter(mgr => mgr.teams.length > 0)
         .sort((a, b) => b.totalPoints - a.totalPoints)
 
+      // Find the single highest scoring team across all managers
+      const allTeams = Object.values(managerMap).flatMap(mgr => mgr.teams)
+      const globalTopTeam = allTeams.reduce((best, team) =>
+        team.points > (best?.points || 0) ? team : best, null)
+
+      // Attach to the standings leader so Standings.js can access it
+      if (sorted.length > 0) sorted[0].globalTopTeam = globalTopTeam
+
       setStandings(sorted)
     } catch (err) {
       console.error(err)
