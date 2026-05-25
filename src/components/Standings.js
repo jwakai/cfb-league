@@ -436,7 +436,7 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
 // Set to true at end of season to enable gold highlight, medals, and final standings styling
 const SEASON_COMPLETE = true
 
-export default function Standings({ standings, maxPoints, season }) {
+export default function Standings({ standings, maxPoints, season, currentWeek, weeklyLeader }) {
   const [openManager, setOpenManager] = useState(null)
 
   if (standings.length === 0) {
@@ -477,8 +477,13 @@ export default function Standings({ standings, maxPoints, season }) {
             Current Week
           </div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1, textTransform: 'uppercase' }}>
-            Off-Season
+            {currentWeek ? `Week ${currentWeek}` : 'Off-Season'}
           </div>
+          {weeklyLeader && (
+            <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 4 }}>
+              {weeklyLeader.name?.toUpperCase()} leads · {weeklyLeader.points} pts
+            </div>
+          )}
         </div>
 
         {/* Season Leader */}
