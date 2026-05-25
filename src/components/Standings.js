@@ -20,7 +20,7 @@ const TEAM_ESPN_IDS = {
   'Nebraska': 158, 'Florida St': 52, 'Kansas': 2305, 'South Alabama': 6,
   'Houston': 248, 'Iowa': 2294, 'Missouri': 142, 'Arizona St': 9,
   'UTEP': 2638, 'Syracuse': 183, 'Colorado St': 36, 'Arkansas': 8,
-  'Texas Tech': 2641, 'Oregon': 2483, 'Tulane': 2655, 'UNLV': 2439,
+  'Texas Tech': 2641, 'Oregon': 2483, 'Tulane': 2116, 'UNLV': 2439,
   'Louisiana Tech': 2348, 'Pitt': 221, 'Tennessee': 2633, 'Buffalo': 2084,
   'Utah': 254, 'Louisville': 97, 'Troy': 2653, 'Fresno St': 278,
   'Penn St': 213, 'Kentucky': 96, 'App St': 2026, 'Marshall': 276,
@@ -164,40 +164,76 @@ function TeamRow({ team, openTeam, setOpenTeam }) {
 
           <div>
             <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 8 }}>
-              2025 Schedule
+              Schedule
             </div>
             {schedule && schedule.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                {schedule.map((game, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '5px 0',
-                    borderBottom: i < schedule.length - 1 ? '0.5px solid #f0f0f0' : 'none'
-                  }}>
-                    <span style={{ fontSize: 9, color: 'var(--text-muted)', width: 30, flexShrink: 0 }}>Wk {game.week}</span>
-                    <span style={{ fontSize: 9, color: 'var(--text-secondary)', width: 16, flexShrink: 0 }}>{game.home ? 'vs' : 'at'}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
-                      {teamLogoUrl(game.opponent) && (
-                        <img src={teamLogoUrl(game.opponent)} alt={game.opponent}
-                          style={{ width: 14, height: 14, objectFit: 'contain', flexShrink: 0 }}
-                          onError={e => { e.target.style.display = 'none' }} />
-                      )}
-                      <span style={{ fontSize: 10, color: '#1c1c1e', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {game.opponent}
-                      </span>
-                    </div>
-                    {game.result ? (
-                      <span style={{
-                        fontSize: 10, fontWeight: 700, flexShrink: 0,
-                        color: game.result === 'W' ? '#2d7a3a' : '#c0392b',
-                        background: game.result === 'W' ? '#eaf5ec' : '#fdf0ef',
-                        padding: '1px 6px', borderRadius: 4
-                      }}>{game.result}</span>
-                    ) : (
-                      <span style={{ fontSize: 9, color: 'var(--text-muted)', flexShrink: 0 }}>—</span>
-                    )}
-                  </div>
-                ))}
+                {[...schedule]
+                  .sort((a, b) => {
+                    // Regular season first by week, then conf champ, then bowl, then CFP
+                    const typeOrder = (g: any) => g.isCfp ? 3 : g.isBowl ? 2 : g.isConfChamp ? 1 : 0
+                    if (typeOrder(a) !== typeOrder(b)) return typeOrder(a) - typeOrder(b)
+                    return a.week - b.week
+                  })
+                  .map((game, i, arr) => {
+                    const isPostseason = game.isCfp || game.isBowl || game.isConfChamp
+                    const prevIsPostseason = i > 0 && (arr[i-1].isCfp || arr[i-1].isBowl || arr[i-1].isConfChamp)
+                    const showDivider = isPostseason && !prevIsPostseason
+
+                    const weekLabel = game.isConfChamp ? 'CCG'
+                      : game.isBowl ? 'Bowl'
+                      : game.isCfp && game.cfpRound === 'firstround' ? 'CFP R1'
+                      : game.isCfp && game.cfpRound === 'quarterfinal' ? 'CFP QF'
+                      : game.isCfp && game.cfpRound === 'semifinal' ? 'CFP SF'
+                      : game.isCfp && game.cfpRound === 'championship' ? 'CFP NC'
+                      : game.isCfp ? 'CFP'
+                      : `Wk ${game.week}`
+
+                    return (
+                      <div key={i}>
+                        {showDivider && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '6px 0 4px' }}>
+                            <div style={{ flex: 1, height: 0.5, background: '#e5e5ea' }} />
+                            <span style={{ fontSize: 8, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Postseason</span>
+                            <div style={{ flex: 1, height: 0.5, background: '#e5e5ea' }} />
+                          </div>
+                        )}
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          padding: '5px 0',
+                          borderBottom: i < arr.length - 1 ? '0.5px solid #f0f0f0' : 'none'
+                        }}>
+                          <span style={{
+                            fontSize: 9, color: isPostseason ? '#c9920e' : 'var(--text-muted)',
+                            width: 36, flexShrink: 0, fontWeight: isPostseason ? 700 : 400
+                          }}>{weekLabel}</span>
+                          <span style={{ fontSize: 9, color: 'var(--text-secondary)', width: 16, flexShrink: 0 }}>
+                            {game.home ? 'vs' : 'at'}
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
+                            {teamLogoUrl(game.opponent) && (
+                              <img src={teamLogoUrl(game.opponent)} alt={game.opponent}
+                                style={{ width: 14, height: 14, objectFit: 'contain', flexShrink: 0 }}
+                                onError={e => { e.target.style.display = 'none' }} />
+                            )}
+                            <span style={{ fontSize: 10, color: '#1c1c1e', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {game.opponent}
+                            </span>
+                          </div>
+                          {game.result ? (
+                            <span style={{
+                              fontSize: 10, fontWeight: 700, flexShrink: 0,
+                              color: game.result === 'W' ? '#2d7a3a' : '#c0392b',
+                              background: game.result === 'W' ? '#eaf5ec' : '#fdf0ef',
+                              padding: '1px 6px', borderRadius: 4
+                            }}>{game.result}</span>
+                          ) : (
+                            <span style={{ fontSize: 9, color: 'var(--text-muted)', flexShrink: 0 }}>—</span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
               </div>
             ) : (
               <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
@@ -435,36 +471,67 @@ function GlobalTeamRow({ team, managerName, rank }) {
             </div>
             {schedule && schedule.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                {schedule.map((game, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '5px 0',
-                    borderBottom: i < schedule.length - 1 ? '0.5px solid #f0f0f0' : 'none'
-                  }}>
-                    <span style={{ fontSize: 9, color: 'var(--text-muted)', width: 30, flexShrink: 0 }}>Wk {game.week}</span>
-                    <span style={{ fontSize: 9, color: 'var(--text-secondary)', width: 16, flexShrink: 0 }}>{game.home ? 'vs' : 'at'}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
-                      {teamLogoUrl(game.opponent) && (
-                        <img src={teamLogoUrl(game.opponent)} alt={game.opponent}
-                          style={{ width: 14, height: 14, objectFit: 'contain', flexShrink: 0 }}
-                          onError={e => { e.target.style.display = 'none' }} />
-                      )}
-                      <span style={{ fontSize: 10, color: '#1c1c1e', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {game.opponent}
-                      </span>
-                    </div>
-                    {game.result ? (
-                      <span style={{
-                        fontSize: 10, fontWeight: 700, flexShrink: 0,
-                        color: game.result === 'W' ? '#2d7a3a' : '#c0392b',
-                        background: game.result === 'W' ? '#eaf5ec' : '#fdf0ef',
-                        padding: '1px 6px', borderRadius: 4
-                      }}>{game.result}</span>
-                    ) : (
-                      <span style={{ fontSize: 9, color: 'var(--text-muted)', flexShrink: 0 }}>—</span>
-                    )}
-                  </div>
-                ))}
+                {[...schedule]
+                  .sort((a, b) => {
+                    const typeOrder = (g) => g.isCfp ? 3 : g.isBowl ? 2 : g.isConfChamp ? 1 : 0
+                    if (typeOrder(a) !== typeOrder(b)) return typeOrder(a) - typeOrder(b)
+                    return a.week - b.week
+                  })
+                  .map((game, i, arr) => {
+                    const isPostseason = game.isCfp || game.isBowl || game.isConfChamp
+                    const prevIsPostseason = i > 0 && (arr[i-1].isCfp || arr[i-1].isBowl || arr[i-1].isConfChamp)
+                    const showDivider = isPostseason && !prevIsPostseason
+                    const weekLabel = game.isConfChamp ? 'CCG'
+                      : game.isBowl ? 'Bowl'
+                      : game.isCfp && game.cfpRound === 'firstround' ? 'CFP R1'
+                      : game.isCfp && game.cfpRound === 'quarterfinal' ? 'CFP QF'
+                      : game.isCfp && game.cfpRound === 'semifinal' ? 'CFP SF'
+                      : game.isCfp && game.cfpRound === 'championship' ? 'CFP NC'
+                      : game.isCfp ? 'CFP'
+                      : `Wk ${game.week}`
+                    return (
+                      <div key={i}>
+                        {showDivider && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '6px 0 4px' }}>
+                            <div style={{ flex: 1, height: 0.5, background: '#e5e5ea' }} />
+                            <span style={{ fontSize: 8, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Postseason</span>
+                            <div style={{ flex: 1, height: 0.5, background: '#e5e5ea' }} />
+                          </div>
+                        )}
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          padding: '5px 0',
+                          borderBottom: i < arr.length - 1 ? '0.5px solid #f0f0f0' : 'none'
+                        }}>
+                          <span style={{
+                            fontSize: 9, color: isPostseason ? '#c9920e' : 'var(--text-muted)',
+                            width: 36, flexShrink: 0, fontWeight: isPostseason ? 700 : 400
+                          }}>{weekLabel}</span>
+                          <span style={{ fontSize: 9, color: 'var(--text-secondary)', width: 16, flexShrink: 0 }}>{game.home ? 'vs' : 'at'}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
+                            {teamLogoUrl(game.opponent) && (
+                              <img src={teamLogoUrl(game.opponent)} alt={game.opponent}
+                                style={{ width: 14, height: 14, objectFit: 'contain', flexShrink: 0 }}
+                                onError={e => { e.target.style.display = 'none' }} />
+                            )}
+                            <span style={{ fontSize: 10, color: '#1c1c1e', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {game.opponent}
+                            </span>
+                          </div>
+                          {game.result ? (
+                            <span style={{
+                              fontSize: 10, fontWeight: 700, flexShrink: 0,
+                              color: game.result === 'W' ? '#2d7a3a' : '#c0392b',
+                              background: game.result === 'W' ? '#eaf5ec' : '#fdf0ef',
+                              padding: '1px 6px', borderRadius: 4
+                            }}>{game.result}</span>
+                          ) : (
+                            <span style={{ fontSize: 9, color: 'var(--text-muted)', flexShrink: 0 }}>—</span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
               </div>
             ) : (
               <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
