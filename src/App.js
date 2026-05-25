@@ -75,6 +75,10 @@ export default function App() {
         // CFP projection — team has a CFP game recorded
         const cfpProjected = teamGames.some(g => g.is_cfp)
 
+        // Current AP ranking — most recent week's ranking from team_games opponent data
+        // Will be populated via Phase 5 rankings API; null during off-season
+        const currentRank = team.current_rank || null
+
         mgr.teams.push({
           id: team.id,
           school: team.school,
@@ -86,6 +90,7 @@ export default function App() {
           top25Wins: teamGames.length > 0 ? top25Wins : null,
           nextOpponent,
           cfpProjected,
+          currentRank,
           schedule: teamGames.map(g => ({
             week: g.week,
             opponent: g.opponent,
