@@ -78,19 +78,32 @@ function TeamRow({ team, openTeam, setOpenTeam }) {
         <TeamLogo school={team.school} size={26} />
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
+            {team.currentRank && (
+              <span style={{
+                fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 900,
+                color: '#c9920e', letterSpacing: '0.02em', flexShrink: 0
+              }}>
+                #{team.currentRank}
+              </span>
+            )}
             <span style={{
               fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 900,
               color: 'var(--text-primary)', letterSpacing: '0.04em', textTransform: 'uppercase'
             }}>
               {team.school}
             </span>
+            {record && (
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>
+                ({record})
+              </span>
+            )}
             {team.conference !== 'Independent' && (
               <ConferenceLogo conference={team.conference} size={14} />
             )}
           </div>
           <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
-            {record ? `${record}${team.nextOpponent ? ` · Next: ${team.nextOpponent}` : ''}` : 'Off-season'}
+            {team.nextOpponent ? `Next: ${team.nextOpponent}` : 'Off-season'}
           </div>
         </div>
 
@@ -112,14 +125,16 @@ function TeamRow({ team, openTeam, setOpenTeam }) {
           marginBottom: 10, border: '0.5px solid var(--border)'
         }}>
           <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
             gap: 8, paddingBottom: 12,
             borderBottom: '0.5px solid var(--border)', marginBottom: 12
           }}>
             <div>
-              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Record</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 900, color: '#1c1c1e', lineHeight: 1 }}>{record || '—'}</div>
-              {!record && <div style={{ fontSize: 9, color: 'var(--text-secondary)' }}>Off-season</div>}
+              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Conference</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                {team.conference !== 'Independent' && <ConferenceLogo conference={team.conference} size={16} />}
+                <span style={{ fontSize: 10, fontWeight: 600, color: '#1c1c1e' }}>{team.conference}</span>
+              </div>
             </div>
             <div>
               <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Top 25 Wins</div>
@@ -129,7 +144,7 @@ function TeamRow({ team, openTeam, setOpenTeam }) {
             <div>
               <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Rivals</div>
               {team.rival_1 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <div style={{ display: 'flex', flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
                   {[team.rival_1, team.rival_2].map(rival => (
                     <div key={rival} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       {teamLogoUrl(rival) && (
@@ -144,13 +159,6 @@ function TeamRow({ team, openTeam, setOpenTeam }) {
               ) : (
                 <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>—</span>
               )}
-            </div>
-            <div>
-              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Conference</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                {team.conference !== 'Independent' && <ConferenceLogo conference={team.conference} size={16} />}
-                <span style={{ fontSize: 10, fontWeight: 600, color: '#1c1c1e' }}>{team.conference}</span>
-              </div>
             </div>
           </div>
 
