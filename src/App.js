@@ -99,6 +99,10 @@ export default function App() {
             opponentRank: g.opponent_rank,
             schoolScore: g.school_score,
             opponentScore: g.opponent_score,
+            isCfp: g.is_cfp,
+            isBowl: g.is_bowl,
+            isConfChamp: g.is_conference_championship,
+            cfpRound: g.cfp_round,
           })),
         })
       })
