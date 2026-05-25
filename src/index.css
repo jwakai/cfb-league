@@ -65,74 +65,50 @@ a { color: inherit; text-decoration: none; }
 .manager-card {
   position: relative;
   isolation: isolate;
+  transition: background 0.3s ease;
 }
 
-/* Top border — scales from center out */
-.manager-card::before {
-  content: '';
+/* SVG border overlay — sits on top of card, pointer-events off */
+.manager-card .border-svg {
   position: absolute;
-  top: 0;
-  left: 50%;
-  right: 50%;
-  height: 2px;
-  background: #c9920e;
-  border-radius: 2px 2px 0 0;
-  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              right 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.35s ease;
-  opacity: 0;
-  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
+  z-index: 2;
+  overflow: visible;
 }
 
-/* Bottom border — scales from center out */
-.manager-card::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  right: 50%;
-  height: 2px;
-  background: #c9920e;
-  border-radius: 0 0 2px 2px;
-  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              right 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.35s ease;
-  opacity: 0;
-  z-index: 1;
-  pointer-events: none;
+.manager-card .border-svg rect {
+  fill: none;
+  stroke: #c9920e;
+  stroke-width: 2;
+  stroke-dasharray: var(--perimeter, 2000);
+  stroke-dashoffset: var(--perimeter, 2000);
+  transition: stroke-dashoffset 0.4s cubic-bezier(0.4, 0, 0.15, 1);
 }
 
-/* Open state — borders expand to full width */
-.manager-card.manager-card--open::before,
-.manager-card.manager-card--open::after {
-  left: 0;
-  right: 0;
-  opacity: 1;
+.manager-card.manager-card--open .border-svg rect {
+  stroke-dashoffset: 0;
 }
 
-/* Left accent bar — slides down from top */
+/* Left accent bar */
 .manager-card .accent-bar {
   position: absolute;
   left: 0;
   top: 0;
-  bottom: 100%;
   width: 3px;
+  height: 0;
   background: #c9920e;
-  border-radius: 0;
-  transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.1s,
+  transition: height 0.35s cubic-bezier(0.4, 0, 0.15, 1) 0.15s,
               opacity 0.2s ease;
   opacity: 0;
-  z-index: 1;
+  z-index: 3;
   pointer-events: none;
+  border-radius: 0 0 2px 2px;
 }
 
 .manager-card.manager-card--open .accent-bar {
-  bottom: 0;
+  height: 100%;
   opacity: 1;
-}
-
-/* Background and border color transitions */
-.manager-card {
-  transition: background 0.35s ease, border-color 0.35s ease;
 }
