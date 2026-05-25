@@ -20,7 +20,7 @@ const TEAM_ESPN_IDS = {
   'Nebraska': 158, 'Florida St': 52, 'Kansas': 2305, 'South Alabama': 6,
   'Houston': 248, 'Iowa': 2294, 'Missouri': 142, 'Arizona St': 9,
   'UTEP': 2638, 'Syracuse': 183, 'Colorado St': 36, 'Arkansas': 8,
-  'Texas Tech': 2641, 'Oregon': 2483, 'Tulane': 2116, 'UNLV': 2439,
+  'Texas Tech': 2641, 'Oregon': 2483, 'Tulane': 2670, 'UNLV': 2439,
   'Louisiana Tech': 2348, 'Pitt': 221, 'Tennessee': 2633, 'Buffalo': 2084,
   'Utah': 254, 'Louisville': 97, 'Troy': 2653, 'Fresno St': 278,
   'Penn St': 213, 'Kentucky': 96, 'App St': 2026, 'Marshall': 276,
