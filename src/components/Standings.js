@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { ConferenceLogo } from './conferenceLogo'
 
-
 const MEDAL = ['🥇', '🥈', '🥉']
 
 const TEAM_ESPN_IDS = {
