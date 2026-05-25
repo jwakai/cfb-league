@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { ConferenceLogo } from './conferenceLogo'
 
 const MEDAL = ['🥇', '🥈', '🥉']
@@ -247,14 +247,78 @@ function TeamRow({ team, openTeam, setOpenTeam }) {
   )
 }
 
+// SVG border that traces clockwise from top-center, meeting at bottom-center
+function BorderSVG() {
+  const ref = useRef(null)
+  const [dims, setDims] = useState({ w: 0, h: 0 })
+
+  useEffect(() => {
+    const el = ref.current?.parentElement
+    if (!el) return
+    const obs = new ResizeObserver(entries => {
+      const { width, height } = entries[0].contentRect
+      setDims({ w: width, h: height })
+    })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  const { w, h } = dims
+  if (!w || !h) return <svg ref={ref} className="border-svg" />
+
+  const r = 13 // border-radius matching --radius
+  // Perimeter of the rounded rect
+  const perimeter = 2 * (w + h) - 8 * r + 2 * Math.PI * r
+
+  // Path starting from top-center, going clockwise
+  const mx = w / 2
+  const path = [
+    `M ${mx} 0`,                          // start top-center
+    `H ${w - r}`,                          // top-right
+    `Q ${w} 0 ${w} ${r}`,                  // top-right corner
+    `V ${h - r}`,                          // right side
+    `Q ${w} ${h} ${w - r} ${h}`,          // bottom-right corner
+    `H ${r}`,                              // bottom (going left)
+    `Q 0 ${h} 0 ${h - r}`,               // bottom-left corner
+    `V ${r}`,                              // left side
+    `Q 0 0 ${r} 0`,                        // top-left corner
+    `H ${mx}`,                             // back to top-center
+  ].join(' ')
+
+  return (
+    <svg ref={ref} className="border-svg">
+      <path
+        d={path}
+        fill="none"
+        stroke="#c9920e"
+        strokeWidth="2"
+        strokeDasharray={perimeter}
+        strokeDashoffset={perimeter}
+        style={{
+          transition: 'stroke-dashoffset 0.38s cubic-bezier(0.4, 0, 0.15, 1)'
+        }}
+      />
+    </svg>
+  )
+}
+
 function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpenManager }) {
   const [openTeam, setOpenTeam] = useState(null)
+  const cardRef = useRef(null)
   const open = openManager === mgr.name
   const isLeader = rank === 1 && seasonComplete
   const barWidth = Math.round((mgr.totalPoints / maxPoints) * 100)
   const topTeam = mgr.topTeam
   const logoUrl = topTeam ? teamLogoUrl(topTeam.school) : null
   const cfpCount = mgr.teams.filter(t => t.cfpProjected).length
+
+  // Animate SVG path when open state changes
+  useEffect(() => {
+    const path = cardRef.current?.querySelector('.border-svg path')
+    if (!path) return
+    const total = parseFloat(path.getAttribute('stroke-dasharray') || '0')
+    path.style.strokeDashoffset = open ? '0' : String(total)
+  }, [open])
 
   function handleToggle() {
     if (open) {
@@ -268,15 +332,18 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
 
   return (
     <div
+      ref={cardRef}
       className={`manager-card${open ? ' manager-card--open' : ''}`}
       style={{
         background: (isLeader || open) ? '#fdf8ef' : 'var(--bg-card)',
-        border: `1.5px solid ${(isLeader || open) ? '#c9920e' : 'var(--border)'}`,
+        border: `1.5px solid ${(isLeader && !open) ? '#c9920e' : 'var(--border)'}`,
         borderRadius: 'var(--radius)',
         overflow: 'hidden',
       }}
     >
-      {/* Animated accent bar — slides down on open */}
+      {/* SVG border that traces from top-center clockwise */}
+      <BorderSVG />
+      {/* Accent bar slides down on open */}
       <div className="accent-bar" />
 
       <div
