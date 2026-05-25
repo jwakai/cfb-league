@@ -267,21 +267,17 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
   }
 
   return (
-    <div style={{
-      background: (isLeader || open) ? '#fdf8ef' : 'var(--bg-card)',
-      border: `1.5px solid ${(isLeader || open) ? '#c9920e' : 'var(--border)'}`,
-      borderRadius: 'var(--radius)',
-      overflow: 'hidden',
-      position: 'relative',
-      transition: 'background 0.3s ease, border-color 0.3s ease'
-    }}>
-      {(isLeader || open) && (
-        <div style={{
-          position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
-          background: '#c9920e',
-          transition: 'opacity 0.3s ease'
-        }} />
-      )}
+    <div
+      className={`manager-card${open ? ' manager-card--open' : ''}`}
+      style={{
+        background: (isLeader || open) ? '#fdf8ef' : 'var(--bg-card)',
+        border: `1.5px solid ${(isLeader || open) ? '#c9920e' : 'var(--border)'}`,
+        borderRadius: 'var(--radius)',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Animated accent bar — slides down on open */}
+      <div className="accent-bar" />
 
       <div
         onClick={handleToggle}
@@ -292,7 +288,6 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
           fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 900,
           color: (isLeader || open) ? '#c9920e' : 'var(--text-muted)',
           width: 18, textAlign: 'center', flexShrink: 0,
-          transition: 'color 0.3s ease'
         }}>
           {seasonComplete && rank <= 3 ? MEDAL[rank - 1] : rank}
         </div>
@@ -303,7 +298,6 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
           border: `0.5px solid ${(isLeader || open) ? '#e5c96a' : 'var(--border)'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0, overflow: 'hidden',
-          transition: 'background 0.3s ease, border-color 0.3s ease'
         }}>
           {logoUrl ? (
             <img src={logoUrl} alt={topTeam?.school}
@@ -339,7 +333,6 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
             <div style={{
               height: '100%', width: `${barWidth}%`, borderRadius: 2,
               background: (isLeader || open) ? '#c9920e' : '#e5e5ea',
-              transition: 'background 0.3s ease'
             }} />
           </div>
         </div>
