@@ -29,7 +29,7 @@ export default function App() {
         supabase.from('Teams').select('*'),
         supabase.from('Managers_Teams').select('*').eq('season', season),
         supabase.from('Scoring_Events').select('*').eq('season', season),
-        supabase.from('team_games').select('*').eq('season', season),
+        supabase.from('team_games').select('*').eq('season', season).limit(5000),
       ])
 
       if (mgrError) throw mgrError
