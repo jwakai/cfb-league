@@ -388,7 +388,7 @@ export default function Standings({ standings, maxPoints, season }) {
   }
 
   const leader = standings[0]
-  const topTeam = leader?.topTeam
+  const topTeam = leader?.globalTopTeam || leader?.topTeam
   // Placeholder — will be populated by CFBD API in Phase 5
   const topTeamRecord = topTeam?.record || null
   const topTeamTop25 = topTeam?.top25Wins ?? null
