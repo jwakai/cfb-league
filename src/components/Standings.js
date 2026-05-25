@@ -329,11 +329,161 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
   )
 }
 
+function GlobalTeamRow({ team, managerName, rank }) {
+  const [open, setOpen] = useState(false)
+  const record = team.record || null
+  const top25Wins = team.top25Wins ?? null
+  const schedule = team.schedule || null
+
+  return (
+    <div style={{ borderBottom: '0.5px solid var(--border)' }}>
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', cursor: 'pointer' }}
+      >
+        {/* Rank */}
+        <div style={{
+          fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 900,
+          color: 'var(--text-muted)', width: 20, textAlign: 'center', flexShrink: 0
+        }}>{rank}</div>
+
+        <TeamLogo school={team.school} size={26} />
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
+            {team.currentRank && (
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 900, color: '#c9920e', flexShrink: 0 }}>
+                #{team.currentRank}
+              </span>
+            )}
+            <span style={{
+              fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 900,
+              color: 'var(--text-primary)', letterSpacing: '0.04em', textTransform: 'uppercase'
+            }}>
+              {team.school}
+            </span>
+            {record && (
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>({record})</span>
+            )}
+            {team.conference !== 'Independent' && (
+              <ConferenceLogo conference={team.conference} size={14} />
+            )}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
+            {managerName ? `Owned by ${managerName}` : ''}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 900, color: '#1c1c1e' }}>
+            {team.points}
+          </span>
+          <span style={{
+            fontSize: 11, color: 'var(--text-muted)',
+            display: 'inline-block', transition: 'transform 0.2s',
+            transform: open ? 'rotate(90deg)' : 'rotate(0deg)'
+          }}>›</span>
+        </div>
+      </div>
+
+      {open && (
+        <div className="dropdown-animate" style={{
+          background: '#fafafa', borderRadius: 8, padding: '12px',
+          marginBottom: 10, border: '0.5px solid var(--border)'
+        }}>
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 8, paddingBottom: 12,
+            borderBottom: '0.5px solid var(--border)', marginBottom: 12
+          }}>
+            <div>
+              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Conference</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                {team.conference !== 'Independent' && <ConferenceLogo conference={team.conference} size={16} />}
+                <span style={{ fontSize: 10, fontWeight: 600, color: '#1c1c1e' }}>{team.conference}</span>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Top 25 Wins</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 900, color: '#1c1c1e', lineHeight: 1 }}>{top25Wins !== null ? top25Wins : '—'}</div>
+              {top25Wins === null && <div style={{ fontSize: 9, color: 'var(--text-secondary)' }}>Off-season</div>}
+            </div>
+            <div>
+              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Rivals</div>
+              {team.rival_1 ? (
+                <div style={{ display: 'flex', flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                  {[team.rival_1, team.rival_2].map(rival => (
+                    <div key={rival} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {teamLogoUrl(rival) && (
+                        <img src={teamLogoUrl(rival)} alt={rival}
+                          style={{ width: 14, height: 14, objectFit: 'contain' }}
+                          onError={e => { e.target.style.display = 'none' }} />
+                      )}
+                      <span style={{ fontSize: 10, fontWeight: 600, color: '#1c1c1e' }}>{rival}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>—</span>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 8 }}>
+              Schedule
+            </div>
+            {schedule && schedule.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {schedule.map((game, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '5px 0',
+                    borderBottom: i < schedule.length - 1 ? '0.5px solid #f0f0f0' : 'none'
+                  }}>
+                    <span style={{ fontSize: 9, color: 'var(--text-muted)', width: 30, flexShrink: 0 }}>Wk {game.week}</span>
+                    <span style={{ fontSize: 9, color: 'var(--text-secondary)', width: 16, flexShrink: 0 }}>{game.home ? 'vs' : 'at'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
+                      {teamLogoUrl(game.opponent) && (
+                        <img src={teamLogoUrl(game.opponent)} alt={game.opponent}
+                          style={{ width: 14, height: 14, objectFit: 'contain', flexShrink: 0 }}
+                          onError={e => { e.target.style.display = 'none' }} />
+                      )}
+                      <span style={{ fontSize: 10, color: '#1c1c1e', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {game.opponent}
+                      </span>
+                    </div>
+                    {game.result ? (
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, flexShrink: 0,
+                        color: game.result === 'W' ? '#2d7a3a' : '#c0392b',
+                        background: game.result === 'W' ? '#eaf5ec' : '#fdf0ef',
+                        padding: '1px 6px', borderRadius: 4
+                      }}>{game.result}</span>
+                    ) : (
+                      <span style={{ fontSize: 9, color: 'var(--text-muted)', flexShrink: 0 }}>—</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                Schedule will populate automatically when the 2026 season begins.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Set to true at end of season to enable gold highlight, medals, and final standings styling
 const SEASON_COMPLETE = true
 
 export default function Standings({ standings, maxPoints, season, currentWeek, weeklyLeader }) {
   const [openManager, setOpenManager] = useState(null)
+  const [showTeamLeaderboard, setShowTeamLeaderboard] = useState(false)
 
   if (standings.length === 0) {
     return (
@@ -354,6 +504,46 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
     ? [topTeamRecord, topTeamTop25 !== null ? `${topTeamTop25} Top 25 W` : null, topTeamNext ? `Next: ${topTeamNext}` : null]
         .filter(Boolean).join(' | ')
     : 'Off-season'
+
+  // Build global team leaderboard — all teams across all managers sorted by points
+  const allTeamsWithManager = standings.flatMap(mgr =>
+    mgr.teams.map(team => ({ ...team, managerName: mgr.name }))
+  ).sort((a, b) => b.points - a.points)
+
+  if (showTeamLeaderboard) {
+    return (
+      <div>
+        {/* Back button */}
+        <button
+          onClick={() => setShowTeamLeaderboard(false)}
+          style={{
+            background: 'none', border: '1px solid var(--border)',
+            color: 'var(--text-secondary)', borderRadius: 'var(--radius-sm)',
+            padding: '6px 14px', fontSize: 12, marginBottom: 16,
+            display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer'
+          }}
+        >
+          ← Back to Standings
+        </button>
+
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)', padding: '0 16px', marginBottom: 12
+        }}>
+          <div style={{
+            padding: '12px 0', borderBottom: '1px solid var(--border)',
+            fontSize: 10, color: 'var(--text-secondary)',
+            textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600
+          }}>
+            All Teams — ranked by total points
+          </div>
+          {allTeamsWithManager.map((team, i) => (
+            <GlobalTeamRow key={`${team.school}-${team.managerName}`} team={team} managerName={team.managerName} rank={i + 1} />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -398,12 +588,15 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
           </div>
         </div>
 
-        {/* Top Team */}
-        <div style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
-          borderRadius: 'var(--radius)', padding: '12px', position: 'relative', overflow: 'hidden',
-          textAlign: 'center'
-        }}>
+        {/* Top Team — tappable */}
+        <div
+          onClick={() => setShowTeamLeaderboard(true)}
+          style={{
+            background: 'var(--bg-card)', border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)', padding: '12px', position: 'relative', overflow: 'hidden',
+            textAlign: 'center', cursor: 'pointer'
+          }}
+        >
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: '#c9920e' }} />
           <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 6 }}>
             Top Team
@@ -422,6 +615,9 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
           </div>
           <div style={{ fontSize: 9, color: 'var(--text-secondary)', marginTop: 2 }}>
             {topTeamSub}
+          </div>
+          <div style={{ fontSize: 9, color: '#c9920e', marginTop: 4, fontWeight: 600 }}>
+            Tap to see all teams ›
           </div>
         </div>
 
