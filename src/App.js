@@ -3,8 +3,11 @@ import './index.css'
 import { supabase } from './supabaseClient'
 import Standings from './components/Standings'
 import Header from './components/Header'
+import Draft from './Draft'
 
 export default function App() {
+  const isDraftPage = window.location.pathname === '/draft'
+  if (isDraftPage) return <Draft />
   const [standings, setStandings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
