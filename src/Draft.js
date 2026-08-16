@@ -91,7 +91,7 @@ const CONFERENCES = {
     { school: 'Central Michigan', id: 2117 }, { school: 'Eastern Michigan', id: 2199 },
     { school: 'Kent St', id: 2309 }, { school: 'Massachusetts', id: 113 },
     { school: 'Miami OH', id: 193 }, { school: 'Ohio', id: 195 },
-    { school: 'Sacramento St', id: 2536 }, { school: 'Toledo', id: 2649 },
+    { school: 'Sacramento St', id: 16 }, { school: 'Toledo', id: 2649 },
     { school: 'Western Michigan', id: 2711 },
   ],
   'CUSA': [
