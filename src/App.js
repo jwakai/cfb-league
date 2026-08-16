@@ -94,7 +94,7 @@ export default function App() {
           nextOpponent,
           cfpProjected,
           currentRank,
-          schedule: teamGames.map(g => ({
+        schedule: teamGames.map(g => ({
             week: g.week,
             opponent: g.opponent,
             home: g.home,
@@ -106,6 +106,8 @@ export default function App() {
             isBowl: g.is_bowl,
             isConfChamp: g.is_conference_championship,
             cfpRound: g.cfp_round,
+            isRival: g.is_rival,
+            pointsEarned: g.points_earned,
           })),
         })
       })
