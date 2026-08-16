@@ -81,7 +81,7 @@ const CONFERENCES = {
     { school: 'Coastal Carolina', id: 324 }, { school: 'Georgia Southern', id: 290 },
     { school: 'Georgia St', id: 2247 }, { school: 'James Madison', id: 256 },
     { school: 'Louisiana', id: 309 }, { school: 'Louisiana Tech', id: 2348 },
-    { school: 'Marshall', id: 276 }, { school: 'Old Dominion', id: 2055 },
+    { school: 'Marshall', id: 276 }, { school: 'Old Dominion', id: 295 },
     { school: 'South Alabama', id: 6 }, { school: 'Southern Miss', id: 2572 },
     { school: 'Troy', id: 2653 }, { school: 'UL Monroe', id: 2433 },
   ],
@@ -91,7 +91,7 @@ const CONFERENCES = {
     { school: 'Central Michigan', id: 2117 }, { school: 'Eastern Michigan', id: 2199 },
     { school: 'Kent St', id: 2309 }, { school: 'Massachusetts', id: 113 },
     { school: 'Miami OH', id: 193 }, { school: 'Ohio', id: 195 },
-    { school: 'Sacramento St', id: 119 }, { school: 'Toledo', id: 2649 },
+    { school: 'Sacramento St', id: 2536 }, { school: 'Toledo', id: 2649 },
     { school: 'Western Michigan', id: 2711 },
   ],
   'CUSA': [
@@ -108,7 +108,7 @@ const CONFERENCES = {
     { school: 'Utah St', id: 328 }, { school: 'Washington St', id: 265 },
   ],
   'Independents': [
-    { school: 'Connecticut', id: 2117 }, { school: 'Notre Dame', id: 87 },
+    { school: 'Connecticut', id: 41 }, { school: 'Notre Dame', id: 87 },
   ],
 }
 
@@ -130,19 +130,23 @@ function getPickInfo(pickNum) {
 // Determine which slot a new pick should go into based on conference
 function determineSlot(school, conference, existingManagerPicks) {
   const isPower4 = POWER4.has(conference)
-  // Find which required conference slots are still unfilled
+  // Fill the required conference slot first if still empty
   if (isPower4) {
     const slotIdx = REQUIRED_CONF_SLOTS[conference]
-    // Check if this manager already has a team in the required slot for this conference
-    const alreadyHasConf = existingManagerPicks.some(p => p.slotLabel === conference)
+    const alreadyHasConf = existingManagerPicks.some(p => p.slotIdx === slotIdx)
     if (!alreadyHasConf) {
       return { slotLabel: conference, slotIdx }
     }
   }
-  // Otherwise, find the next available Flex slot (indices 4-7)
-  const filledSlots = existingManagerPicks.length
-  const flexSlotIdx = Math.max(filledSlots, 4)
-  return { slotLabel: 'Flex', slotIdx: Math.min(flexSlotIdx, 7) }
+  // Find the next available Flex slot (indices 4, 5, 6, 7)
+  const filledSlotIndices = new Set(existingManagerPicks.map(p => p.slotIdx))
+  for (let i = 4; i <= 7; i++) {
+    if (!filledSlotIndices.has(i)) {
+      return { slotLabel: 'Flex', slotIdx: i }
+    }
+  }
+  // All slots filled — fallback
+  return { slotLabel: 'Flex', slotIdx: 7 }
 }
 
 export default function Draft() {
@@ -458,17 +462,28 @@ export default function Draft() {
             <div style={{ background: 'white', border: '1px solid #e5e5ea', borderRadius: 8, padding: '8px 10px', height: '100%', overflowY: 'auto' }}>
               <div style={{ fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#8e8e93', marginBottom: 8 }}>Pick Log</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {picks.map(p => {
+                {picks.map((p, i) => {
                   const roundNum = Math.floor((p.pickNum - 1) / DRAFT_ORDER.length) + 1
                   const pickInRound = ((p.pickNum - 1) % DRAFT_ORDER.length) + 1
+                  const prevRound = i > 0 ? Math.floor((picks[i-1].pickNum - 1) / DRAFT_ORDER.length) + 1 : null
+                  const isNewRound = prevRound !== null && roundNum !== prevRound
                   return (
-                    <div key={p.pickNum} style={{ fontSize: 10, background: '#f2f2f7', borderRadius: 4, padding: '3px 7px', color: '#3c3c43', lineHeight: 1.4 }}>
-                      <span style={{ color: '#c9920e', fontWeight: 600 }}>
-                        {roundNum}.{pickInRound} {p.manager}
-                      </span>
-                      <br />
-                      <span style={{ fontSize: 9 }}>{p.school}</span>
-                    </div>
+                    <React.Fragment key={p.pickNum}>
+                      {isNewRound && (
+                        <div style={{ borderTop: '2px solid #1c1c1e', margin: '4px 0 2px', position: 'relative' }}>
+                          <span style={{ position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%)', background: 'white', padding: '0 4px', fontSize: 8, fontWeight: 700, color: '#1c1c1e', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                            Round {roundNum}
+                          </span>
+                        </div>
+                      )}
+                      <div style={{ fontSize: 10, background: '#f2f2f7', borderRadius: 4, padding: '3px 7px', color: '#3c3c43', lineHeight: 1.4 }}>
+                        <span style={{ color: '#c9920e', fontWeight: 600 }}>
+                          {roundNum}.{pickInRound} {p.manager}
+                        </span>
+                        <br />
+                        <span style={{ fontSize: 9 }}>{p.school}</span>
+                      </div>
+                    </React.Fragment>
                   )
                 })}
               </div>
