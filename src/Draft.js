@@ -96,9 +96,9 @@ const CONFERENCES = {
   ],
   'CUSA': [
     { school: 'Delaware', id: 48 }, { school: 'FIU', id: 2229 },
-    { school: 'Jacksonville St', id: 55 }, { school: 'Kennesaw St', id: 2908 },
+    { school: 'Jacksonville St', id: 55 }, { school: 'Kennesaw St', id: 338 },
     { school: 'Liberty', id: 2335 }, { school: 'Middle Tennessee', id: 2393 },
-    { school: 'Missouri St', id: 2623 }, { school: 'New Mexico St', id: 2443 },
+    { school: 'Missouri St', id: 2623 }, { school: 'New Mexico St', id: 166 },
     { school: 'Sam Houston', id: 2534 }, { school: 'Western Kentucky', id: 98 },
   ],
   'Pac-12': [
