@@ -20,7 +20,7 @@ const TEAM_ESPN_IDS = {
   'Nebraska': 158, 'Florida St': 52, 'Kansas': 2305, 'South Alabama': 6,
   'Houston': 248, 'Iowa': 2294, 'Missouri': 142, 'Arizona St': 9,
   'UTEP': 2638, 'Syracuse': 183, 'Colorado St': 36, 'Arkansas': 8,
-  'Texas Tech': 2641, 'Oregon': 2483, 'Tulane': 2116, 'UNLV': 2439,
+  'Texas Tech': 2641, 'Oregon': 2483, 'Tulane': 2655, 'UNLV': 2439,
   'Louisiana Tech': 2348, 'Pitt': 221, 'Tennessee': 2633, 'Buffalo': 2084,
   'Utah': 254, 'Louisville': 97, 'Troy': 2653, 'Fresno St': 278,
   'Penn St': 213, 'Kentucky': 96, 'App St': 2026, 'Marshall': 276,
@@ -30,7 +30,7 @@ const TEAM_ESPN_IDS = {
   'Georgia Southern': 290, 'Air Force': 2005, 'UNC': 153, 'Oklahoma St': 197,
   'Southern Miss': 2572, 'Army': 349, 'Pittsburgh': 221, 'Purdue': 2509,
   'Utah St': 328, 'Rice': 242, 'Wyoming': 2751, 'Western Michigan': 2711,
-  'Virginia': 258, 'Kennesaw St': 2908, 'NC St': 152,
+  'Virginia': 258, 'Kennesaw St': 338, 'NC St': 152,
 }
 
 function teamLogoUrl(school) {
@@ -63,11 +63,156 @@ function TeamLogo({ school, size = 22 }) {
   )
 }
 
+function getWinLabel(game) {
+  if (game.isConfChamp) return game.result === 'W' ? 'CCG Win' : 'CCG Appearance'
+  if (game.isCfp) {
+    if (game.cfpRound === 'championship') return 'CFP Championship'
+    if (game.cfpRound === 'semifinal') return 'CFP Semifinal Win'
+    if (game.cfpRound === 'quarterfinal') return 'CFP Quarterfinal Win'
+    if (game.cfpRound === 'firstround') return 'CFP Round 1 Win'
+    return 'CFP Win'
+  }
+  if (game.isBowl) return 'Bowl Win'
+  if (game.isRival && game.opponentRank) return 'Ranked Rival Win'
+  if (game.isRival) return 'Rivalry Win'
+  if (game.opponentRank) return `Top 25 Win (#${game.opponentRank})`
+  return null
+}
+
+function ScheduleList({ schedule }) {
+  if (!schedule || schedule.length === 0) {
+    return (
+      <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+        Schedule will populate automatically when the 2026 season begins.
+      </div>
+    )
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+      {[...schedule]
+        .sort((a, b) => {
+          const typeOrder = (g) => g.isCfp ? 3 : g.isBowl ? 2 : g.isConfChamp ? 1 : 0
+          if (typeOrder(a) !== typeOrder(b)) return typeOrder(a) - typeOrder(b)
+          return a.week - b.week
+        })
+        .map((game, i, arr) => {
+          const isPostseason = game.isCfp || game.isBowl || game.isConfChamp
+          const prevIsPostseason = i > 0 && (arr[i-1].isCfp || arr[i-1].isBowl || arr[i-1].isConfChamp)
+          const showDivider = isPostseason && !prevIsPostseason
+          const weekLabel = game.isConfChamp ? 'CCG'
+            : game.isBowl ? 'Bowl'
+            : game.isCfp && game.cfpRound === 'firstround' ? 'CFP R1'
+            : game.isCfp && game.cfpRound === 'quarterfinal' ? 'CFP QF'
+            : game.isCfp && game.cfpRound === 'semifinal' ? 'CFP SF'
+            : game.isCfp && game.cfpRound === 'championship' ? 'CFP NC'
+            : game.isCfp ? 'CFP'
+            : `Wk ${game.week}`
+          const winLabel = getWinLabel(game)
+          return (
+            <div key={i}>
+              {showDivider && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '6px 0 4px' }}>
+                  <div style={{ flex: 1, height: 0.5, background: '#e5e5ea' }} />
+                  <span style={{ fontSize: 8, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Postseason</span>
+                  <div style={{ flex: 1, height: 0.5, background: '#e5e5ea' }} />
+                </div>
+              )}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '5px 0',
+                borderBottom: i < arr.length - 1 ? '0.5px solid #f0f0f0' : 'none'
+              }}>
+                <span style={{
+                  fontSize: 9, color: isPostseason ? '#c9920e' : 'var(--text-muted)',
+                  width: 36, flexShrink: 0, fontWeight: isPostseason ? 700 : 400
+                }}>{weekLabel}</span>
+                <span style={{ fontSize: 9, color: 'var(--text-secondary)', width: 16, flexShrink: 0 }}>
+                  {game.home ? 'vs' : 'at'}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
+                  {teamLogoUrl(game.opponent) && (
+                    <img src={teamLogoUrl(game.opponent)} alt={game.opponent}
+                      style={{ width: 14, height: 14, objectFit: 'contain', flexShrink: 0 }}
+                      onError={e => { e.target.style.display = 'none' }} />
+                  )}
+                  <span style={{ fontSize: 10, color: '#1c1c1e', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {game.opponent}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                  {game.result ? (
+                    <span style={{
+                      fontSize: 10, fontWeight: 700,
+                      color: game.result === 'W' ? '#2d7a3a' : '#c0392b',
+                      background: game.result === 'W' ? '#eaf5ec' : '#fdf0ef',
+                      padding: '1px 6px', borderRadius: 4
+                    }}>{game.result}</span>
+                  ) : (
+                    <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>—</span>
+                  )}
+                  {game.result === 'W' && game.pointsEarned > 0 && winLabel && (
+                    <span style={{
+                      fontSize: 9, color: '#c9920e', fontWeight: 700,
+                      background: '#fdf6e3', padding: '1px 5px', borderRadius: 4,
+                      whiteSpace: 'nowrap'
+                    }}>+{game.pointsEarned} ({winLabel})</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+    </div>
+  )
+}
+
+function TeamDetailGrid({ team }) {
+  return (
+    <div style={{
+      display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+      gap: 8, paddingBottom: 12,
+      borderBottom: '0.5px solid var(--border)', marginBottom: 12
+    }}>
+      <div>
+        <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Conference</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          {team.conference !== 'Independent' && <ConferenceLogo conference={team.conference} size={16} />}
+          <span style={{ fontSize: 10, fontWeight: 600, color: '#1c1c1e' }}>{team.conference}</span>
+        </div>
+      </div>
+      <div>
+        <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Top 25 Wins</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 900, color: '#1c1c1e', lineHeight: 1 }}>
+          {team.top25Wins !== null ? team.top25Wins : '—'}
+        </div>
+        {team.top25Wins === null && <div style={{ fontSize: 9, color: 'var(--text-secondary)' }}>Off-season</div>}
+      </div>
+      <div>
+        <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Rivals</div>
+        {team.rival_1 ? (
+          <div style={{ display: 'flex', flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+            {[team.rival_1, team.rival_2].map(rival => (
+              <div key={rival} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                {teamLogoUrl(rival) && (
+                  <img src={teamLogoUrl(rival)} alt={rival}
+                    style={{ width: 14, height: 14, objectFit: 'contain' }}
+                    onError={e => { e.target.style.display = 'none' }} />
+                )}
+                <span style={{ fontSize: 10, fontWeight: 600, color: '#1c1c1e' }}>{rival}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>—</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function TeamRow({ team, openTeam, setOpenTeam }) {
   const open = openTeam === team.school
   const record = team.record || null
-  const top25Wins = team.top25Wins ?? null
-  const schedule = team.schedule || null
 
   return (
     <div style={{ borderBottom: '0.5px solid var(--border)' }}>
@@ -83,20 +228,14 @@ function TeamRow({ team, openTeam, setOpenTeam }) {
               <span style={{
                 fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 900,
                 color: '#c9920e', letterSpacing: '0.02em', flexShrink: 0
-              }}>
-                #{team.currentRank}
-              </span>
+              }}>#{team.currentRank}</span>
             )}
             <span style={{
               fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 900,
               color: 'var(--text-primary)', letterSpacing: '0.04em', textTransform: 'uppercase'
-            }}>
-              {team.school}
-            </span>
+            }}>{team.school}</span>
             {record && (
-              <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>
-                ({record})
-              </span>
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>({record})</span>
             )}
             {team.conference !== 'Independent' && (
               <ConferenceLogo conference={team.conference} size={14} />
@@ -124,122 +263,12 @@ function TeamRow({ team, openTeam, setOpenTeam }) {
           background: '#fafafa', borderRadius: 8, padding: '12px',
           marginBottom: 10, border: '0.5px solid var(--border)'
         }}>
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 8, paddingBottom: 12,
-            borderBottom: '0.5px solid var(--border)', marginBottom: 12
-          }}>
-            <div>
-              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Conference</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                {team.conference !== 'Independent' && <ConferenceLogo conference={team.conference} size={16} />}
-                <span style={{ fontSize: 10, fontWeight: 600, color: '#1c1c1e' }}>{team.conference}</span>
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Top 25 Wins</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 900, color: '#1c1c1e', lineHeight: 1 }}>{top25Wins !== null ? top25Wins : '—'}</div>
-              {top25Wins === null && <div style={{ fontSize: 9, color: 'var(--text-secondary)' }}>Off-season</div>}
-            </div>
-            <div>
-              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Rivals</div>
-              {team.rival_1 ? (
-                <div style={{ display: 'flex', flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                  {[team.rival_1, team.rival_2].map(rival => (
-                    <div key={rival} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      {teamLogoUrl(rival) && (
-                        <img src={teamLogoUrl(rival)} alt={rival}
-                          style={{ width: 14, height: 14, objectFit: 'contain' }}
-                          onError={e => { e.target.style.display = 'none' }} />
-                      )}
-                      <span style={{ fontSize: 10, fontWeight: 600, color: '#1c1c1e' }}>{rival}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>—</span>
-              )}
-            </div>
-          </div>
-
+          <TeamDetailGrid team={team} />
           <div>
             <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 8 }}>
               Schedule
             </div>
-            {schedule && schedule.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                {[...schedule]
-                  .sort((a, b) => {
-                    // Regular season first by week, then conf champ, then bowl, then CFP
-                    const typeOrder = (g: any) => g.isCfp ? 3 : g.isBowl ? 2 : g.isConfChamp ? 1 : 0
-                    if (typeOrder(a) !== typeOrder(b)) return typeOrder(a) - typeOrder(b)
-                    return a.week - b.week
-                  })
-                  .map((game, i, arr) => {
-                    const isPostseason = game.isCfp || game.isBowl || game.isConfChamp
-                    const prevIsPostseason = i > 0 && (arr[i-1].isCfp || arr[i-1].isBowl || arr[i-1].isConfChamp)
-                    const showDivider = isPostseason && !prevIsPostseason
-
-                    const weekLabel = game.isConfChamp ? 'CCG'
-                      : game.isBowl ? 'Bowl'
-                      : game.isCfp && game.cfpRound === 'firstround' ? 'CFP R1'
-                      : game.isCfp && game.cfpRound === 'quarterfinal' ? 'CFP QF'
-                      : game.isCfp && game.cfpRound === 'semifinal' ? 'CFP SF'
-                      : game.isCfp && game.cfpRound === 'championship' ? 'CFP NC'
-                      : game.isCfp ? 'CFP'
-                      : `Wk ${game.week}`
-
-                    return (
-                      <div key={i}>
-                        {showDivider && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '6px 0 4px' }}>
-                            <div style={{ flex: 1, height: 0.5, background: '#e5e5ea' }} />
-                            <span style={{ fontSize: 8, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Postseason</span>
-                            <div style={{ flex: 1, height: 0.5, background: '#e5e5ea' }} />
-                          </div>
-                        )}
-                        <div style={{
-                          display: 'flex', alignItems: 'center', gap: 8,
-                          padding: '5px 0',
-                          borderBottom: i < arr.length - 1 ? '0.5px solid #f0f0f0' : 'none'
-                        }}>
-                          <span style={{
-                            fontSize: 9, color: isPostseason ? '#c9920e' : 'var(--text-muted)',
-                            width: 36, flexShrink: 0, fontWeight: isPostseason ? 700 : 400
-                          }}>{weekLabel}</span>
-                          <span style={{ fontSize: 9, color: 'var(--text-secondary)', width: 16, flexShrink: 0 }}>
-                            {game.home ? 'vs' : 'at'}
-                          </span>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
-                            {teamLogoUrl(game.opponent) && (
-                              <img src={teamLogoUrl(game.opponent)} alt={game.opponent}
-                                style={{ width: 14, height: 14, objectFit: 'contain', flexShrink: 0 }}
-                                onError={e => { e.target.style.display = 'none' }} />
-                            )}
-                            <span style={{ fontSize: 10, color: '#1c1c1e', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {game.opponent}
-                            </span>
-                          </div>
-                          {game.result ? (
-                            <span style={{
-                              fontSize: 10, fontWeight: 700, flexShrink: 0,
-                              color: game.result === 'W' ? '#2d7a3a' : '#c0392b',
-                              background: game.result === 'W' ? '#eaf5ec' : '#fdf0ef',
-                              padding: '1px 6px', borderRadius: 4
-                            }}>{game.result}</span>
-                          ) : (
-                            <span style={{ fontSize: 9, color: 'var(--text-muted)', flexShrink: 0 }}>—</span>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-              </div>
-            ) : (
-              <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                Schedule will populate automatically when the 2026 season begins.
-              </div>
-            )}
+            <ScheduleList schedule={team.schedule} />
           </div>
         </div>
       )}
@@ -368,8 +397,6 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
 function GlobalTeamRow({ team, managerName, rank }) {
   const [open, setOpen] = useState(false)
   const record = team.record || null
-  const top25Wins = team.top25Wins ?? null
-  const schedule = team.schedule || null
 
   return (
     <div style={{ borderBottom: '0.5px solid var(--border)' }}>
@@ -377,7 +404,6 @@ function GlobalTeamRow({ team, managerName, rank }) {
         onClick={() => setOpen(o => !o)}
         style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', cursor: 'pointer' }}
       >
-        {/* Rank */}
         <div style={{
           fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 900,
           color: 'var(--text-muted)', width: 20, textAlign: 'center', flexShrink: 0
@@ -395,9 +421,7 @@ function GlobalTeamRow({ team, managerName, rank }) {
             <span style={{
               fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 900,
               color: 'var(--text-primary)', letterSpacing: '0.04em', textTransform: 'uppercase'
-            }}>
-              {team.school}
-            </span>
+            }}>{team.school}</span>
             {record && (
               <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>({record})</span>
             )}
@@ -427,117 +451,12 @@ function GlobalTeamRow({ team, managerName, rank }) {
           background: '#fafafa', borderRadius: 8, padding: '12px',
           marginBottom: 10, border: '0.5px solid var(--border)'
         }}>
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 8, paddingBottom: 12,
-            borderBottom: '0.5px solid var(--border)', marginBottom: 12
-          }}>
-            <div>
-              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Conference</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                {team.conference !== 'Independent' && <ConferenceLogo conference={team.conference} size={16} />}
-                <span style={{ fontSize: 10, fontWeight: 600, color: '#1c1c1e' }}>{team.conference}</span>
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Top 25 Wins</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 900, color: '#1c1c1e', lineHeight: 1 }}>{top25Wins !== null ? top25Wins : '—'}</div>
-              {top25Wins === null && <div style={{ fontSize: 9, color: 'var(--text-secondary)' }}>Off-season</div>}
-            </div>
-            <div>
-              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Rivals</div>
-              {team.rival_1 ? (
-                <div style={{ display: 'flex', flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                  {[team.rival_1, team.rival_2].map(rival => (
-                    <div key={rival} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      {teamLogoUrl(rival) && (
-                        <img src={teamLogoUrl(rival)} alt={rival}
-                          style={{ width: 14, height: 14, objectFit: 'contain' }}
-                          onError={e => { e.target.style.display = 'none' }} />
-                      )}
-                      <span style={{ fontSize: 10, fontWeight: 600, color: '#1c1c1e' }}>{rival}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>—</span>
-              )}
-            </div>
-          </div>
-
+          <TeamDetailGrid team={team} />
           <div>
             <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 8 }}>
               Schedule
             </div>
-            {schedule && schedule.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                {[...schedule]
-                  .sort((a, b) => {
-                    const typeOrder = (g) => g.isCfp ? 3 : g.isBowl ? 2 : g.isConfChamp ? 1 : 0
-                    if (typeOrder(a) !== typeOrder(b)) return typeOrder(a) - typeOrder(b)
-                    return a.week - b.week
-                  })
-                  .map((game, i, arr) => {
-                    const isPostseason = game.isCfp || game.isBowl || game.isConfChamp
-                    const prevIsPostseason = i > 0 && (arr[i-1].isCfp || arr[i-1].isBowl || arr[i-1].isConfChamp)
-                    const showDivider = isPostseason && !prevIsPostseason
-                    const weekLabel = game.isConfChamp ? 'CCG'
-                      : game.isBowl ? 'Bowl'
-                      : game.isCfp && game.cfpRound === 'firstround' ? 'CFP R1'
-                      : game.isCfp && game.cfpRound === 'quarterfinal' ? 'CFP QF'
-                      : game.isCfp && game.cfpRound === 'semifinal' ? 'CFP SF'
-                      : game.isCfp && game.cfpRound === 'championship' ? 'CFP NC'
-                      : game.isCfp ? 'CFP'
-                      : `Wk ${game.week}`
-                    return (
-                      <div key={i}>
-                        {showDivider && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '6px 0 4px' }}>
-                            <div style={{ flex: 1, height: 0.5, background: '#e5e5ea' }} />
-                            <span style={{ fontSize: 8, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Postseason</span>
-                            <div style={{ flex: 1, height: 0.5, background: '#e5e5ea' }} />
-                          </div>
-                        )}
-                        <div style={{
-                          display: 'flex', alignItems: 'center', gap: 8,
-                          padding: '5px 0',
-                          borderBottom: i < arr.length - 1 ? '0.5px solid #f0f0f0' : 'none'
-                        }}>
-                          <span style={{
-                            fontSize: 9, color: isPostseason ? '#c9920e' : 'var(--text-muted)',
-                            width: 36, flexShrink: 0, fontWeight: isPostseason ? 700 : 400
-                          }}>{weekLabel}</span>
-                          <span style={{ fontSize: 9, color: 'var(--text-secondary)', width: 16, flexShrink: 0 }}>{game.home ? 'vs' : 'at'}</span>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
-                            {teamLogoUrl(game.opponent) && (
-                              <img src={teamLogoUrl(game.opponent)} alt={game.opponent}
-                                style={{ width: 14, height: 14, objectFit: 'contain', flexShrink: 0 }}
-                                onError={e => { e.target.style.display = 'none' }} />
-                            )}
-                            <span style={{ fontSize: 10, color: '#1c1c1e', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {game.opponent}
-                            </span>
-                          </div>
-                          {game.result ? (
-                            <span style={{
-                              fontSize: 10, fontWeight: 700, flexShrink: 0,
-                              color: game.result === 'W' ? '#2d7a3a' : '#c0392b',
-                              background: game.result === 'W' ? '#eaf5ec' : '#fdf0ef',
-                              padding: '1px 6px', borderRadius: 4
-                            }}>{game.result}</span>
-                          ) : (
-                            <span style={{ fontSize: 9, color: 'var(--text-muted)', flexShrink: 0 }}>—</span>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-              </div>
-            ) : (
-              <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                Schedule will populate automatically when the 2026 season begins.
-              </div>
-            )}
+            <ScheduleList schedule={team.schedule} />
           </div>
         </div>
       )}
@@ -562,17 +481,12 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
 
   const leader = standings[0]
   const topTeam = leader?.globalTopTeam || leader?.topTeam
-  const topTeamRecord = topTeam?.record || null
-  const topTeamTop25 = topTeam?.top25Wins ?? null
-  const topTeamNext = topTeam?.nextOpponent || null
   const topTeamLogoUrl = topTeam ? teamLogoUrl(topTeam.school) : null
-
-  const topTeamSub = topTeamRecord
-    ? [topTeamRecord, topTeamTop25 !== null ? `${topTeamTop25} Top 25 W` : null, topTeamNext ? `Next: ${topTeamNext}` : null]
+  const topTeamSub = topTeam?.record
+    ? [topTeam.record, topTeam.top25Wins !== null ? `${topTeam.top25Wins} Top 25 W` : null, topTeam.nextOpponent ? `Next: ${topTeam.nextOpponent}` : null]
         .filter(Boolean).join(' | ')
     : 'Off-season'
 
-  // Build global team leaderboard — all teams across all managers sorted by points
   const allTeamsWithManager = standings.flatMap(mgr =>
     mgr.teams.map(team => ({ ...team, managerName: mgr.name }))
   ).sort((a, b) => b.points - a.points)
@@ -580,7 +494,6 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
   if (showTeamLeaderboard) {
     return (
       <div>
-        {/* Back button */}
         <button
           onClick={() => setShowTeamLeaderboard(false)}
           style={{
@@ -592,7 +505,6 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
         >
           ← Back to Standings
         </button>
-
         <div style={{
           background: 'var(--bg-card)', border: '1px solid var(--border)',
           borderRadius: 'var(--radius)', padding: '0 16px', marginBottom: 12
@@ -614,10 +526,8 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
 
   return (
     <div>
-      {/* Top 3 stat cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
 
-        {/* Current Week */}
         <div style={{
           background: 'var(--bg-card)', border: '1px solid var(--border)',
           borderRadius: 'var(--radius)', padding: '12px', position: 'relative', overflow: 'hidden',
@@ -637,7 +547,6 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
           )}
         </div>
 
-        {/* Season Leader */}
         <div style={{
           background: 'var(--bg-card)', border: '1px solid var(--border)',
           borderRadius: 'var(--radius)', padding: '12px', position: 'relative', overflow: 'hidden',
@@ -655,7 +564,6 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
           </div>
         </div>
 
-        {/* Top Team — tappable */}
         <div
           onClick={() => setShowTeamLeaderboard(true)}
           style={{
@@ -680,12 +588,8 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 900, color: '#1c1c1e', lineHeight: 1 }}>
             {topTeam?.points} pts
           </div>
-          <div style={{ fontSize: 9, color: 'var(--text-secondary)', marginTop: 2 }}>
-            {topTeamSub}
-          </div>
-          <div style={{ fontSize: 9, color: '#c9920e', marginTop: 4, fontWeight: 600 }}>
-            Tap to see all teams ›
-          </div>
+          <div style={{ fontSize: 9, color: 'var(--text-secondary)', marginTop: 2 }}>{topTeamSub}</div>
+          <div style={{ fontSize: 9, color: '#c9920e', marginTop: 4, fontWeight: 600 }}>Tap to see all teams ›</div>
         </div>
 
       </div>
