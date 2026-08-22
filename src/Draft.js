@@ -185,7 +185,21 @@ export default function Draft() {
     teams.map(t => ({ ...t, conference: conf }))
   )
 
-  useEffect(() => { loadPicks() }, [])
+  useEffect(() => {
+    loadPicks()
+
+    // Real-time subscription — updates all viewers instantly when picks are made
+    const channel = supabase
+      .channel('draft_picks_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'draft_picks', filter: `season=eq.${SEASON}` },
+        () => { loadPicks() }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   async function loadPicks() {
     setLoading(true)
