@@ -3,8 +3,8 @@ import { supabase } from './supabaseClient'
 
 // ── Draft order — edit names here before the draft ──────────
 const DRAFT_ORDER = [
-  'Nick', 'Jack', 'Aaron', 'Griffin', 'Jake', 'Zach',
-  'Sean', 'Austin', 'Peter', 'Adam', 'Marc', 'Brad'
+  'Aaron', 'Zach', 'Marc', 'Peter', 'Adam', 'Austin',
+  'Jake', 'Brad', 'Nick', 'Jack', 'Sean', 'Griff'
 ]
 
 const TOTAL_ROUNDS = 8
