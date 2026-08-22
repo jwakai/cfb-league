@@ -186,7 +186,7 @@ export default function Draft() {
   )
 
   useEffect(() => {
-    loadPicks()
+    loadPicks(true)
 
     // Real-time subscription — updates all viewers instantly when picks are made
     const channel = supabase
@@ -194,15 +194,15 @@ export default function Draft() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'draft_picks', filter: `season=eq.${SEASON}` },
-        () => { loadPicks() }
+        () => { loadPicks(false) }
       )
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
   }, [])
 
-  async function loadPicks() {
-    setLoading(true)
+  async function loadPicks(showSpinner = false) {
+    if (showSpinner) setLoading(true)
     try {
       const { data } = await supabase
         .from('draft_picks')
@@ -219,7 +219,7 @@ export default function Draft() {
         })))
       }
     } catch (e) { console.error(e) }
-    setLoading(false)
+    if (showSpinner) setLoading(false)
   }
 
   useEffect(() => {
