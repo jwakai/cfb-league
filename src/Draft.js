@@ -303,6 +303,145 @@ export default function Draft() {
 
   const progressPct = Math.round((picks.length / totalPicks) * 100)
   const G = { fontFamily: "'Barlow Condensed', sans-serif" }
+  const isMobile = window.innerWidth < 768
+
+  // ── Mobile view-only layout ──────────────────────────────────
+  if (viewOnly && isMobile) {
+    // Group picks by manager for roster view
+    const mgrRosters = {}
+    DRAFT_ORDER.forEach(m => { mgrRosters[m] = [] })
+    picks.forEach(p => { if (mgrRosters[p.manager]) mgrRosters[p.manager].push(p) })
+
+    return (
+      <div style={{ fontFamily: "'Barlow', sans-serif", background: '#f2f2f7', minHeight: '100vh' }}>
+
+        {/* Header */}
+        <div style={{ background: 'white', borderBottom: '2px solid #c9920e', padding: '0 16px', height: 52, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
+          <div style={{ ...G, fontSize: 16, fontWeight: 900, color: '#c9920e', letterSpacing: '0.06em' }}>2026 CFB Fantasy Draft</div>
+          <div style={{ fontSize: 10, color: '#8e8e93' }}>{picks.length}/{totalPicks} picks</div>
+        </div>
+
+        {/* Now picking bar */}
+        <div style={{ background: '#1c1c1e', padding: '10px 16px', position: 'sticky', top: 52, zIndex: 99 }}>
+          {!isDraftComplete ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#8e8e93', marginBottom: 2 }}>Now On The Clock</div>
+                <div style={{ ...G, fontSize: 24, fontWeight: 900, color: '#c9920e', textTransform: 'uppercase', lineHeight: 1 }}>
+                  {currentManager}
+                </div>
+                <div style={{ fontSize: 11, color: '#636366', marginTop: 2 }}>
+                  Pick #{currentPickNum} · Round {currentPickInfo.round + 1}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ width: 80, height: 4, background: '#333', borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
+                  <div style={{ width: `${progressPct}%`, height: '100%', background: '#c9920e', borderRadius: 2 }} />
+                </div>
+                <div style={{ fontSize: 10, color: '#636366' }}>{progressPct}% complete</div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ ...G, fontSize: 20, fontWeight: 900, color: '#2d7a3a', textAlign: 'center' }}>🏆 Draft Complete!</div>
+          )}
+        </div>
+
+        <div style={{ padding: '12px 16px 40px' }}>
+
+          {/* Last pick made */}
+          {picks.length > 0 && (
+            <div style={{ background: '#fdf6e3', border: '1px solid #e5c96a', borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <img
+                src={logoUrl(allTeams.find(t => t.school === picks[picks.length-1].school)?.id)}
+                alt={picks[picks.length-1].school}
+                width={40} height={40} style={{ objectFit: 'contain', flexShrink: 0 }}
+                onError={e => { e.target.style.display = 'none' }}
+              />
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#8e8e93', marginBottom: 2 }}>Last Pick</div>
+                <div style={{ ...G, fontSize: 18, fontWeight: 900, color: '#1c1c1e', textTransform: 'uppercase', lineHeight: 1 }}>
+                  {picks[picks.length-1].school}
+                </div>
+                <div style={{ fontSize: 11, color: '#c9920e', fontWeight: 600, marginTop: 2 }}>
+                  {picks[picks.length-1].manager} · #{picks[picks.length-1].pickNum}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Rosters by manager — accordion style */}
+          <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8e8e93', marginBottom: 8 }}>
+            Rosters
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
+            {DRAFT_ORDER.map(mgr => {
+              const mgrPicks = mgrRosters[mgr]
+              const isOnClock = currentManager === mgr && !isDraftComplete
+              return (
+                <div key={mgr} style={{
+                  background: isOnClock ? '#fdf8ef' : 'white',
+                  border: `1.5px solid ${isOnClock ? '#c9920e' : '#e5e5ea'}`,
+                  borderRadius: 10, overflow: 'hidden'
+                }}>
+                  <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {isOnClock && <span style={{ fontSize: 16 }}>🟡</span>}
+                      <div style={{ ...G, fontSize: 16, fontWeight: 900, textTransform: 'uppercase', color: isOnClock ? '#c9920e' : '#1c1c1e', letterSpacing: '0.06em' }}>{mgr}</div>
+                    </div>
+                    <div style={{ fontSize: 11, color: '#8e8e93' }}>{mgrPicks.length}/{TOTAL_ROUNDS} picks</div>
+                  </div>
+                  {mgrPicks.length > 0 && (
+                    <div style={{ borderTop: '0.5px solid #f0f0f0', padding: '8px 14px 10px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {mgrPicks.map(p => {
+                        const tid = allTeams.find(t => t.school === p.school)?.id
+                        const rnd = Math.floor((p.pickNum-1)/DRAFT_ORDER.length)+1
+                        const pin = ((p.pickNum-1)%DRAFT_ORDER.length)+1
+                        return (
+                          <div key={p.pickNum} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#f2f2f7', borderRadius: 6, padding: '4px 8px' }}>
+                            <img src={logoUrl(tid)} alt={p.school} width={20} height={20} style={{ objectFit: 'contain' }} onError={e => { e.target.style.display = 'none' }} />
+                            <div>
+                              <div style={{ ...G, fontSize: 11, fontWeight: 900, textTransform: 'uppercase', color: '#1c1c1e', lineHeight: 1 }}>{p.school}</div>
+                              <div style={{ fontSize: 8, color: '#8e8e93' }}>{rnd}.{pin}</div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Pick log */}
+          {picks.length > 0 && (
+            <>
+              <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8e8e93', marginBottom: 8 }}>
+                Pick Log
+              </div>
+              <div style={{ background: 'white', border: '1px solid #e5e5ea', borderRadius: 10, padding: '8px 12px' }}>
+                {[...picks].reverse().map((p, i) => {
+                  const rnd = Math.floor((p.pickNum-1)/DRAFT_ORDER.length)+1
+                  const pin = ((p.pickNum-1)%DRAFT_ORDER.length)+1
+                  const tid = allTeams.find(t => t.school === p.school)?.id
+                  return (
+                    <div key={p.pickNum} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', borderBottom: i < picks.length-1 ? '0.5px solid #f5f5f5' : 'none' }}>
+                      <div style={{ fontSize: 10, color: '#8e8e93', width: 28, flexShrink: 0, fontWeight: 600 }}>{rnd}.{pin}</div>
+                      <img src={logoUrl(tid)} alt={p.school} width={24} height={24} style={{ objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none' }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ ...G, fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: '#1c1c1e', lineHeight: 1 }}>{p.school}</div>
+                        <div style={{ fontSize: 10, color: '#c9920e', fontWeight: 600 }}>{p.manager}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ fontFamily: "'Barlow', sans-serif", background: '#f2f2f7', minHeight: '100vh' }}>
