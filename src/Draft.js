@@ -641,10 +641,10 @@ export default function Draft() {
                       )}
                       <div style={{ fontSize: 10, background: '#f2f2f7', borderRadius: 4, padding: '3px 7px', color: '#3c3c43', lineHeight: 1.4 }}>
                         <span style={{ color: '#c9920e', fontWeight: 600 }}>
-                          {roundNum}.{pickInRound} {p.manager}
+                          {roundNum}.{pickInRound} {p.school}
                         </span>
                         <br />
-                        <span style={{ fontSize: 9 }}>{p.school}</span>
+                        <span style={{ fontSize: 9 }}>{p.manager}</span>
                       </div>
                     </React.Fragment>
                   )
