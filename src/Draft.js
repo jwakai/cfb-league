@@ -150,6 +150,7 @@ function determineSlot(school, conference, existingManagerPicks) {
 }
 
 export default function Draft() {
+  const viewOnly = new URLSearchParams(window.location.search).get('view') === 'true'
   const [picks, setPicks] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -299,8 +300,8 @@ export default function Draft() {
           <div style={{ fontSize: 10, color: '#8e8e93', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Road to Glory</div>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
-          <button onClick={undoLastPick} disabled={picks.length === 0}
-            style={{ fontSize: 11, padding: '5px 10px', borderRadius: 6, border: '1px solid #c9920e', background: 'white', color: '#c9920e', cursor: picks.length === 0 ? 'not-allowed' : 'pointer', opacity: picks.length === 0 ? 0.4 : 1 }}>
+          <button onClick={undoLastPick} disabled={picks.length === 0 || viewOnly}
+            style={{ fontSize: 11, padding: '5px 10px', borderRadius: 6, border: '1px solid #c9920e', background: 'white', color: '#c9920e', cursor: (picks.length === 0 || viewOnly) ? 'not-allowed' : 'pointer', opacity: (picks.length === 0 || viewOnly) ? 0.4 : 1 }}>
             ↩ Undo last
           </button>
           <button onClick={resetDraft}
@@ -310,6 +311,15 @@ export default function Draft() {
         </div>
       </div>
 
+
+      {/* View-only banner */}
+      {viewOnly && (
+        <div style={{ background: '#1c1c1e', borderBottom: '1px solid #333', padding: '6px 16px', textAlign: 'center' }}>
+          <span style={{ fontSize: 11, color: '#8e8e93', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            👁 View Only Mode — Contact the commissioner to submit your pick
+          </span>
+        </div>
+      )}
       {/* Pick bar */}
       <div style={{ background: 'white', borderBottom: '1px solid #e5e5ea', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 52, zIndex: 99, flexWrap: 'wrap' }}>
         {!isDraftComplete ? (
@@ -325,7 +335,7 @@ export default function Draft() {
           </div>
         )}
 
-        {!isDraftComplete && (
+        {!isDraftComplete && !viewOnly && (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 200 }}>
             <input
               ref={searchRef}
@@ -430,12 +440,12 @@ export default function Draft() {
                       const isMatch = searchResult?.school === team.school
                       return (
                         <div key={team.school}
-                          onClick={() => !drafted && !isDraftComplete && makePick(team.school, team.id)}
+                          onClick={() => !drafted && !isDraftComplete && !viewOnly && makePick(team.school, team.id)}
                           style={{
                             background: drafted ? '#f2f2f7' : isMatch ? '#fdf6e3' : 'white',
                             border: `1px solid ${isMatch ? '#c9920e' : '#e5e5ea'}`,
                             borderRadius: 6, padding: '6px 4px',
-                            cursor: drafted || isDraftComplete ? 'default' : 'pointer',
+                            cursor: drafted || isDraftComplete || viewOnly ? 'default' : 'pointer',
                             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                             opacity: drafted ? 0.5 : 1, minHeight: 70, justifyContent: 'center',
                           }}>
