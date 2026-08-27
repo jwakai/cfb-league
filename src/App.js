@@ -11,7 +11,7 @@ export default function App() {
   const [standings, setStandings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [season, setSeason] = useState(2025)
+  const [season, setSeason] = useState(2026)
 
   useEffect(() => {
     fetchStandings()
