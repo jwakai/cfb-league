@@ -469,7 +469,7 @@ function GlobalTeamRow({ team, managerName, rank }) {
 }
 
 // Set to true at end of season to enable gold highlight, medals, and final standings styling
-const SEASON_COMPLETE = false
+const SEASON_COMPLETE = true
 
 export default function Standings({ standings, maxPoints, season, currentWeek, weeklyLeader }) {
   const [openManager, setOpenManager] = useState(null)
@@ -530,44 +530,155 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
 
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10, marginBottom: 24 }}>
 
+        {/* Left: Featured Games box */}
         <div style={{
           background: 'var(--bg-card)', border: '1px solid var(--border)',
-          borderRadius: 'var(--radius)', padding: '12px', position: 'relative', overflow: 'hidden',
-          textAlign: 'center'
+          borderRadius: 'var(--radius)', padding: '12px 16px', position: 'relative', overflow: 'hidden',
         }}>
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: '#c9920e' }} />
-          <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 6 }}>
-            Current Week
-          </div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1, textTransform: 'uppercase' }}>
-            {currentWeek ? `Week ${currentWeek}` : 'Off-Season'}
-          </div>
-          {weeklyLeader && (
-            <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 4 }}>
-              {weeklyLeader.name?.toUpperCase()} leads · {weeklyLeader.points} pts
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
+            <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+              {currentWeek ? `Week ${currentWeek} —` : ''} Featured Games
             </div>
-          )}
+            {weeklyLeader && (
+              <div style={{ fontSize: 9, color: 'var(--text-secondary)', marginLeft: 'auto' }}>
+                Week leader: <strong>{weeklyLeader.name}</strong> · {weeklyLeader.points} pts
+              </div>
+            )}
+          </div>
+
+          {(() => {
+            // Build featured games from all drafted teams' schedules this week
+            const draftedSchools = new Set(allTeamsWithManager.map(t => t.school))
+            const teamBySchool = {}
+            allTeamsWithManager.forEach(t => { teamBySchool[t.school] = t })
+
+            // Collect this week's games involving drafted teams
+            const seenGameKeys = new Set()
+            const featuredGames = []
+
+            allTeamsWithManager.forEach(team => {
+              if (!team.schedule) return
+              team.schedule.forEach(game => {
+                if (game.week !== currentWeek) return
+                if (game.isCfp || game.isBowl || game.isConfChamp) return
+
+                // Only show if BOTH teams are ranked OR it's a rivalry game
+                const bothRanked = game.opponentRank !== null && team.currentRank !== null
+                const isRivalry = game.isRival
+
+                if (!bothRanked && !isRivalry) return
+
+                // Deduplicate — same game appears for both teams
+                const key = [team.school, game.opponent].sort().join('|')
+                if (seenGameKeys.has(key)) return
+                seenGameKeys.add(key)
+
+                const opponentTeam = teamBySchool[game.opponent]
+                featuredGames.push({
+                  teamA: team,
+                  teamB: opponentTeam || { school: game.opponent },
+                  teamARank: team.currentRank,
+                  teamBRank: game.opponentRank,
+                  isRivalry,
+                  bothRanked,
+                  home: game.home,
+                  result: game.result,
+                  schoolScore: game.schoolScore,
+                  opponentScore: game.opponentScore,
+                })
+              })
+            })
+
+            if (featuredGames.length === 0) {
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 60 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                    {currentWeek ? 'No featured games this week' : 'Off-season — check back when the season starts'}
+                  </div>
+                </div>
+              )
+            }
+
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {featuredGames.map((g, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    background: '#f9f9f9', borderRadius: 8,
+                    border: '0.5px solid var(--border)',
+                    padding: '8px 10px',
+                  }}>
+                    {/* Tag */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flexShrink: 0 }}>
+                      {g.isRivalry && (
+                        <span style={{ fontSize: 8, fontWeight: 700, color: '#c9920e', background: '#fdf6e3', border: '1px solid #e5c96a', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                          Rivalry
+                        </span>
+                      )}
+                      {g.bothRanked && (
+                        <span style={{ fontSize: 8, fontWeight: 700, color: '#2d7a3a', background: '#eaf5ec', border: '1px solid #b5d9bc', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                          Top 25
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Team A */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
+                      {g.teamARank && (
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 900, color: '#c9920e', flexShrink: 0 }}>#{g.teamARank}</span>
+                      )}
+                      <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: '#1c1c1e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {g.teamA.school}
+                      </span>
+                      <img src={teamLogoUrl(g.teamA.school)} alt={g.teamA.school}
+                        style={{ width: 26, height: 26, objectFit: 'contain', flexShrink: 0 }}
+                        onError={e => { e.target.style.display = 'none' }} />
+                    </div>
+
+                    {/* Score or VS */}
+                    <div style={{ flexShrink: 0, textAlign: 'center', minWidth: 40 }}>
+                      {g.result ? (
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 900, color: '#1c1c1e', lineHeight: 1 }}>
+                          {g.home ? `${g.schoolScore}–${g.opponentScore}` : `${g.opponentScore}–${g.schoolScore}`}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-secondary)' }}>vs</div>
+                      )}
+                    </div>
+
+                    {/* Team B */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, flex: 1, minWidth: 0 }}>
+                      <img src={teamLogoUrl(g.teamB.school)} alt={g.teamB.school}
+                        style={{ width: 26, height: 26, objectFit: 'contain', flexShrink: 0 }}
+                        onError={e => { e.target.style.display = 'none' }} />
+                      <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: '#1c1c1e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {g.teamB.school}
+                      </span>
+                      {g.teamBRank && (
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 900, color: '#c9920e', flexShrink: 0 }}>#{g.teamBRank}</span>
+                      )}
+                    </div>
+
+                    {/* Result badge */}
+                    {g.result && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, flexShrink: 0,
+                        color: g.result === 'W' ? '#2d7a3a' : '#c0392b',
+                        background: g.result === 'W' ? '#eaf5ec' : '#fdf0ef',
+                        padding: '1px 6px', borderRadius: 4
+                      }}>{g.result}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
         </div>
 
-        <div style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
-          borderRadius: 'var(--radius)', padding: '12px', position: 'relative', overflow: 'hidden',
-          textAlign: 'center'
-        }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: '#c9920e' }} />
-          <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 6 }}>
-            Season Leader
-          </div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1, textTransform: 'uppercase' }}>
-            {leader?.name}
-          </div>
-          <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 4 }}>
-            {leader?.totalPoints?.toLocaleString()} pts
-          </div>
-        </div>
-
+        {/* Right: Top Team box */}
         <div
           onClick={() => setShowTeamLeaderboard(true)}
           style={{
@@ -593,7 +704,20 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
             {topTeam?.points} pts
           </div>
           <div style={{ fontSize: 9, color: 'var(--text-secondary)', marginTop: 2 }}>{topTeamSub}</div>
-          <div style={{ fontSize: 9, color: '#c9920e', marginTop: 4, fontWeight: 600 }}>Tap to see all teams ›</div>
+          <div style={{ fontSize: 9, color: '#c9920e', marginTop: 8, fontWeight: 600 }}>Tap to see all teams ›</div>
+
+          {/* Season leader below */}
+          <div style={{ borderTop: '0.5px solid var(--border)', marginTop: 10, paddingTop: 10 }}>
+            <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>
+              Season Leader
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1, textTransform: 'uppercase' }}>
+              {leader?.name}
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>
+              {leader?.totalPoints?.toLocaleString()} pts
+            </div>
+          </div>
         </div>
 
       </div>
