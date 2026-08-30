@@ -469,7 +469,7 @@ function GlobalTeamRow({ team, managerName, rank }) {
 }
 
 // Set to true at end of season to enable gold highlight, medals, and final standings styling
-const SEASON_COMPLETE = true
+const SEASON_COMPLETE = false
 
 export default function Standings({ standings, maxPoints, season, currentWeek, weeklyLeader }) {
   const [openManager, setOpenManager] = useState(null)
