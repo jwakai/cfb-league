@@ -38,7 +38,56 @@ const CFP_ROUND_LABELS = {
   'cfp-national-championship': 'championship',
 }
 
-// ── Fetch helper ─────────────────────────────────────────────
+// ── CFBD API name translations ───────────────────────────────
+// Maps our DB school names to what CFBD expects in API calls
+const CFBD_NAME_MAP = {
+  'NC St': 'NC State',
+  'Florida St': 'Florida State',
+  'Mississippi St': 'Mississippi State',
+  'Michigan St': 'Michigan State',
+  'Jacksonville St': 'Jacksonville State',
+  'Jacksonville St': 'Jacksonville State',
+  'Ohio St': 'Ohio State',
+  'Oklahoma St': 'Oklahoma State',
+  'Iowa St': 'Iowa State',
+  'Kansas St': 'Kansas State',
+  'Arizona St': 'Arizona State',
+  'Colorado St': 'Colorado State',
+  'Washington St': 'Washington State',
+  'Oregon St': 'Oregon State',
+  'App St': 'Appalachian State',
+  'San Jose St': 'San José State',
+  'Boise St': 'Boise State',
+  'Fresno St': 'Fresno State',
+  'Utah St': 'Utah State',
+  'Texas St': 'Texas State',
+  'Ball St': 'Ball State',
+  'Kent St': 'Kent State',
+  'Sam Houston': 'Sam Houston State',
+  'Miami OH': 'Miami (OH)',
+  'UNC': 'North Carolina',
+  'Pitt': 'Pittsburgh',
+  'Cal': 'California',
+  'Hawaii': "Hawai'i",
+  'Southern Miss': 'Southern Mississippi',
+  'Ole Miss': 'Mississippi',
+  'Louisiana': 'Louisiana Lafayette',
+  'UTSA': 'UT San Antonio',
+  'UTEP': 'Texas-El Paso',
+  'UAB': 'Alabama-Birmingham',
+  'USF': 'South Florida',
+  'UCF': 'Central Florida',
+  'SMU': 'Southern Methodist',
+  'BYU': 'Brigham Young',
+  'TCU': 'TCU',
+  'LSU': 'LSU',
+}
+
+function toCFBDName(school) {
+  return CFBD_NAME_MAP[school] || school
+}
+
+
 async function cfbdFetch(path) {
   const res = await fetch(`${CFBD_BASE}${path}`, {
     headers: {
@@ -160,7 +209,8 @@ module.exports = async function handler(req, res) {
 
     // Helper: calculate points for a single game — NO STACKING
     function calcPoints(game, school, rival1, rival2) {
-      const isHome = game.home_team === school
+      const cfbdSchoolName = toCFBDName(school)
+      const isHome = game.home_team === cfbdSchoolName
       const opponent = isHome ? game.away_team : game.home_team
       const teamScore = isHome ? game.home_points : game.away_points
       const oppScore = isHome ? game.away_points : game.home_points
@@ -209,8 +259,9 @@ module.exports = async function handler(req, res) {
       // Fetch regular season games
       let regularGames = []
       try {
+        const cfbdName = toCFBDName(team.school)
         regularGames = await cfbdFetch(
-          `/games?year=${season}&team=${encodeURIComponent(team.school)}&seasonType=regular`
+          `/games?year=${season}&team=${encodeURIComponent(cfbdName)}&seasonType=regular`
         )
       } catch (e) {
         console.warn(`[update-scores] Could not fetch games for ${team.school}:`, e.message)
@@ -218,14 +269,15 @@ module.exports = async function handler(req, res) {
       }
 
       // Find this team's postseason games
+      const cfbdName = toCFBDName(team.school)
       const teamConfChamp = confChampGames.filter(g =>
-        g.home_team === team.school || g.away_team === team.school
+        g.home_team === cfbdName || g.away_team === cfbdName
       )
       const teamCfp = cfpGames.filter(g =>
-        g.home_team === team.school || g.away_team === team.school
+        g.home_team === cfbdName || g.away_team === cfbdName
       )
       const teamBowl = bowlGames.filter(g =>
-        g.home_team === team.school || g.away_team === team.school
+        g.home_team === cfbdName || g.away_team === cfbdName
       )
 
       const allGames = [
@@ -234,6 +286,8 @@ module.exports = async function handler(req, res) {
         ...teamBowl.map(g => ({ ...g, _type: 'bowl', _seasonType: 'postseason' })),
         ...teamCfp.map(g => ({ ...g, _type: 'cfp', _seasonType: 'postseason' })),
       ]
+
+      const cfbdSchool = toCFBDName(team.school)
 
       // Track one-time CFP events
       let cfpAppearanceRecorded = false
@@ -246,7 +300,7 @@ module.exports = async function handler(req, res) {
         const gameId = `${season}_${game.id}_${team.school}`
         if (existingGameIds.has(gameId)) continue
 
-        const isHome = game.home_team === team.school
+        const isHome = game.home_team === cfbdSchool
         const opponent = isHome ? game.away_team : game.home_team
 
         // Skip games where opponent name is missing
