@@ -248,6 +248,9 @@ module.exports = async function handler(req, res) {
 
         const isHome = game.home_team === team.school
         const opponent = isHome ? game.away_team : game.home_team
+
+        // Skip games where opponent name is missing
+        if (!opponent) continue
         const teamScore = isHome ? game.home_points : game.away_points
         const oppScore = isHome ? game.away_points : game.home_points
         const won = teamScore > oppScore
