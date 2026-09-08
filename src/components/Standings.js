@@ -87,7 +87,7 @@ function ScheduleList({ schedule }) {
   if (!schedule || schedule.length === 0) {
     return (
       <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-        Schedule will populate automatically when the 2026 season begins.
+        No games recorded yet.
       </div>
     )
   }
@@ -145,21 +145,26 @@ function ScheduleList({ schedule }) {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                   {game.result ? (
-                    <span style={{
-                      fontSize: 10, fontWeight: 700,
-                      color: game.result === 'W' ? '#2d7a3a' : '#c0392b',
-                      background: game.result === 'W' ? '#eaf5ec' : '#fdf0ef',
-                      padding: '1px 6px', borderRadius: 4
-                    }}>{game.result}</span>
+                    <>
+                      <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+                        {game.schoolScore}–{game.opponentScore}
+                      </span>
+                      <span style={{
+                        fontSize: 10, fontWeight: 700,
+                        color: game.result === 'W' ? '#2d7a3a' : '#c0392b',
+                        background: game.result === 'W' ? '#eaf5ec' : '#fdf0ef',
+                        padding: '1px 6px', borderRadius: 4
+                      }}>{game.result}</span>
+                      {game.result === 'W' && game.pointsEarned > 0 && winLabel && (
+                        <span style={{
+                          fontSize: 9, color: '#c9920e', fontWeight: 700,
+                          background: '#fdf6e3', padding: '1px 5px', borderRadius: 4,
+                          whiteSpace: 'nowrap'
+                        }}>+{game.pointsEarned} {winLabel}</span>
+                      )}
+                    </>
                   ) : (
-                    <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>—</span>
-                  )}
-                  {game.result === 'W' && game.pointsEarned > 0 && winLabel && (
-                    <span style={{
-                      fontSize: 9, color: '#c9920e', fontWeight: 700,
-                      background: '#fdf6e3', padding: '1px 5px', borderRadius: 4,
-                      whiteSpace: 'nowrap'
-                    }}>+{game.pointsEarned} ({winLabel})</span>
+                    <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>Upcoming</span>
                   )}
                 </div>
               </div>
@@ -469,7 +474,7 @@ function GlobalTeamRow({ team, managerName, rank }) {
 }
 
 // Set to true at end of season to enable gold highlight, medals, and final standings styling
-const SEASON_COMPLETE = true
+const SEASON_COMPLETE = false
 
 export default function Standings({ standings, maxPoints, season, currentWeek, weeklyLeader }) {
   const [openManager, setOpenManager] = useState(null)
