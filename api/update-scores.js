@@ -59,6 +59,20 @@ const ESPN_ID_TO_SCHOOL = {
   249: 'North Texas', 151: 'East Carolina', 295: 'Old Dominion',
   120: 'Maryland', 164: 'Rutgers', 167: 'New Mexico',
   2117: 'Central Michigan', 5: 'UAB',
+  // FCS/non-Power opponents
+  2464: 'New Mexico St', 2698: 'Sam Houston', 2623: 'Tarleton St',
+  2447: 'Montana', 2065: 'Chattanooga', 2261: 'Gardner Webb',
+  2678: 'Sacred Heart', 2754: 'Stony Brook', 2226: 'Duquesne',
+  2229: 'East Tennessee St', 2309: 'Incarnate Word', 2050: 'Bryant',
+  2571: 'SE Louisiana', 2006: 'Alabama A&M', 2029: 'Alcorn St',
+  2546: 'Prairie View A&M', 2341: 'McNeese St', 2016: 'Alabama St',
+  2502: 'North Carolina A&T', 231: 'Idaho', 202: 'Montana St',
+  2415: 'Missouri St', 2453: 'Murray St', 311: 'Rhode Island',
+  2032: 'Abilene Christian', 2046: 'Austin Peay', 2197: 'Davidson',
+  119: 'Lehigh', 160: 'Maine', 113: 'Lafayette', 70: 'Bucknell',
+  2198: 'UC Davis', 2803: 'North Dakota St', 2634: 'Tennessee St',
+  166: 'Massachusetts', 2433: 'Mercer', 2450: 'Morgan St',
+  2638: 'Texas Southern', 292: 'Portland St', 2440: 'Mississippi Valley St',
 }
 
 const SCHOOL_TO_ESPN_ID = Object.fromEntries(
