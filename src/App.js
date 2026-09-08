@@ -3,15 +3,12 @@ import './index.css'
 import { supabase } from './supabaseClient'
 import Standings from './components/Standings'
 import Header from './components/Header'
-import Draft from './Draft'
 
 export default function App() {
-  const isDraftPage = window.location.pathname === '/draft'
-  if (isDraftPage) return <Draft />
   const [standings, setStandings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [season, setSeason] = useState(2026)
+  const [season, setSeason] = useState(2025)
 
   useEffect(() => {
     fetchStandings()
@@ -69,10 +66,15 @@ export default function App() {
           g => g.result === 'W' && g.opponent_rank !== null && g.opponent_rank <= 25
         ).length
 
-        // Next unplayed game
+        // Next unplayed game (not yet in team_games since ESPN only returns completed)
+        // Show last completed game instead
         const nextGame = teamGames.find(g => g.result === null)
         const nextOpponent = nextGame
           ? `${nextGame.home ? 'vs' : 'at'} ${nextGame.opponent}`
+          : null
+        const lastPlayedGame = [...teamGames].reverse().find(g => g.result !== null)
+        const lastGame = lastPlayedGame
+          ? `${lastPlayedGame.result} ${lastPlayedGame.home ? 'vs' : 'at'} ${lastPlayedGame.opponent}`
           : null
 
         // CFP projection — team has a CFP game recorded
@@ -92,9 +94,10 @@ export default function App() {
           record,
           top25Wins: teamGames.length > 0 ? top25Wins : null,
           nextOpponent,
+          lastGame,
           cfpProjected,
           currentRank,
-        schedule: teamGames.map(g => ({
+          schedule: teamGames.map(g => ({
             week: g.week,
             opponent: g.opponent,
             home: g.home,
@@ -106,8 +109,6 @@ export default function App() {
             isBowl: g.is_bowl,
             isConfChamp: g.is_conference_championship,
             cfpRound: g.cfp_round,
-            isRival: g.is_rival,
-            pointsEarned: g.points_earned,
           })),
         })
       })
