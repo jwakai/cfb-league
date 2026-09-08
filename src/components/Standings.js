@@ -555,12 +555,16 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
           </div>
 
           {(() => {
-            // Build featured games from all drafted teams' schedules this week
-            const draftedSchools = new Set(allTeamsWithManager.map(t => t.school))
+            // Build featured games from drafted teams' schedules this week
             const teamBySchool = {}
             allTeamsWithManager.forEach(t => { teamBySchool[t.school] = t })
 
-            // Collect this week's games involving drafted teams
+            // Build manager lookup: school -> manager name
+            const managerBySchool = {}
+            standings.forEach(mgr => {
+              mgr.teams?.forEach(t => { managerBySchool[t.school] = mgr.name })
+            })
+
             const seenGameKeys = new Set()
             const featuredGames = []
 
@@ -570,25 +574,35 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
                 if (game.week !== currentWeek) return
                 if (game.isCfp || game.isBowl || game.isConfChamp) return
 
-                // Only show if BOTH teams are ranked OR it's a rivalry game
-                const bothRanked = game.opponentRank !== null && team.currentRank !== null
                 const isRivalry = game.isRival
+                // Use opponentRank from game data — don't rely on team.currentRank from DB
+                const teamIsRanked = !!team.currentRank
+                const oppIsRanked = game.opponentRank !== null && game.opponentRank <= 25
+                const isTop25 = teamIsRanked || oppIsRanked
 
-                if (!bothRanked && !isRivalry) return
+                if (!isTop25 && !isRivalry) return
 
-                // Deduplicate — same game appears for both teams
                 const key = [team.school, game.opponent].sort().join('|')
                 if (seenGameKeys.has(key)) return
                 seenGameKeys.add(key)
 
                 const opponentTeam = teamBySchool[game.opponent]
+                const bothRanked = teamIsRanked && oppIsRanked
+
+                // Priority: 3=Top25+Rivalry, 2=Top25, 1=Rivalry
+                const priority = (bothRanked && isRivalry) ? 3 : isTop25 ? 2 : 1
+
                 featuredGames.push({
                   teamA: team,
                   teamB: opponentTeam || { school: game.opponent },
                   teamARank: team.currentRank,
                   teamBRank: game.opponentRank,
+                  teamAManager: managerBySchool[team.school],
+                  teamBManager: managerBySchool[game.opponent],
                   isRivalry,
+                  isTop25,
                   bothRanked,
+                  priority,
                   home: game.home,
                   result: game.result,
                   schoolScore: game.schoolScore,
@@ -596,6 +610,9 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
                 })
               })
             })
+
+            // Sort: Top25+Rivalry first, then Top25, then Rivalry
+            featuredGames.sort((a, b) => b.priority - a.priority)
 
             if (featuredGames.length === 0) {
               return (
@@ -608,76 +625,84 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
             }
 
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {featuredGames.map((g, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    background: '#f9f9f9', borderRadius: 8,
-                    border: '0.5px solid var(--border)',
-                    padding: '8px 10px',
-                  }}>
-                    {/* Tag */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flexShrink: 0 }}>
-                      {g.isRivalry && (
-                        <span style={{ fontSize: 8, fontWeight: 700, color: '#c9920e', background: '#fdf6e3', border: '1px solid #e5c96a', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                          Rivalry
-                        </span>
-                      )}
-                      {g.bothRanked && (
-                        <span style={{ fontSize: 8, fontWeight: 700, color: '#2d7a3a', background: '#eaf5ec', border: '1px solid #b5d9bc', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                          Top 25
-                        </span>
-                      )}
-                    </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {featuredGames.map((g, i) => {
+                  const homeScore = g.home ? g.schoolScore : g.opponentScore
+                  const awayScore = g.home ? g.opponentScore : g.schoolScore
+                  return (
+                    <div key={i} style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      background: '#f9f9f9', borderRadius: 8,
+                      border: '0.5px solid var(--border)',
+                      padding: '8px 12px',
+                    }}>
+                      {/* Priority tag */}
+                      <div style={{ width: 52, flexShrink: 0 }}>
+                        {g.bothRanked && g.isRivalry ? (
+                          <span style={{ fontSize: 7, fontWeight: 700, color: '#7b2d8b', background: '#f5eefa', border: '1px solid #d8b4e8', borderRadius: 4, padding: '2px 4px', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', textAlign: 'center' }}>Ranked Rival</span>
+                        ) : g.isTop25 ? (
+                          <span style={{ fontSize: 7, fontWeight: 700, color: '#2d7a3a', background: '#eaf5ec', border: '1px solid #b5d9bc', borderRadius: 4, padding: '2px 4px', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', textAlign: 'center' }}>Top 25</span>
+                        ) : (
+                          <span style={{ fontSize: 7, fontWeight: 700, color: '#c9920e', background: '#fdf6e3', border: '1px solid #e5c96a', borderRadius: 4, padding: '2px 4px', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', textAlign: 'center' }}>Rivalry</span>
+                        )}
+                      </div>
 
-                    {/* Team A */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
-                      {g.teamARank && (
-                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 900, color: '#c9920e', flexShrink: 0 }}>#{g.teamARank}</span>
-                      )}
-                      <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: '#1c1c1e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {g.teamA.school}
-                      </span>
-                      <img src={teamLogoUrl(g.teamA.school)} alt={g.teamA.school}
-                        style={{ width: 26, height: 26, objectFit: 'contain', flexShrink: 0 }}
-                        onError={e => { e.target.style.display = 'none' }} />
-                    </div>
-
-                    {/* Score or VS */}
-                    <div style={{ flexShrink: 0, textAlign: 'center', minWidth: 40 }}>
-                      {g.result ? (
-                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 900, color: '#1c1c1e', lineHeight: 1 }}>
-                          {g.home ? `${g.schoolScore}–${g.opponentScore}` : `${g.opponentScore}–${g.schoolScore}`}
+                      {/* Team A — logo + rank + manager */}
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                          {g.teamARank && (
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 900, color: '#c9920e' }}>#{g.teamARank}</span>
+                          )}
+                          <img src={teamLogoUrl(g.teamA.school)} alt={g.teamA.school}
+                            style={{ width: 32, height: 32, objectFit: 'contain' }}
+                            onError={e => { e.target.style.display = 'none' }} />
                         </div>
-                      ) : (
-                        <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-secondary)' }}>vs</div>
+                        {g.teamAManager && (
+                          <span style={{ fontSize: 8, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{g.teamAManager}</span>
+                        )}
+                      </div>
+
+                      {/* Score or VS */}
+                      <div style={{ flexShrink: 0, textAlign: 'center', minWidth: 44 }}>
+                        {g.result ? (
+                          <>
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 900, color: '#1c1c1e', lineHeight: 1 }}>
+                              {homeScore}–{awayScore}
+                            </div>
+                            <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 1 }}>Final</div>
+                          </>
+                        ) : (
+                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>vs</div>
+                        )}
+                      </div>
+
+                      {/* Team B — logo + rank + manager */}
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <img src={teamLogoUrl(g.teamB.school)} alt={g.teamB.school}
+                            style={{ width: 32, height: 32, objectFit: 'contain' }}
+                            onError={e => { e.target.style.display = 'none' }} />
+                          {g.teamBRank && (
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 900, color: '#c9920e' }}>#{g.teamBRank}</span>
+                          )}
+                        </div>
+                        {g.teamBManager && (
+                          <span style={{ fontSize: 8, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{g.teamBManager}</span>
+                        )}
+                      </div>
+
+                      {/* Result W/L badge */}
+                      {g.result && (
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, flexShrink: 0,
+                          color: g.result === 'W' ? '#2d7a3a' : '#c0392b',
+                          background: g.result === 'W' ? '#eaf5ec' : '#fdf0ef',
+                          padding: '2px 7px', borderRadius: 4
+                        }}>{g.result}</span>
                       )}
                     </div>
-
-                    {/* Team B */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, flex: 1, minWidth: 0 }}>
-                      <img src={teamLogoUrl(g.teamB.school)} alt={g.teamB.school}
-                        style={{ width: 26, height: 26, objectFit: 'contain', flexShrink: 0 }}
-                        onError={e => { e.target.style.display = 'none' }} />
-                      <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: '#1c1c1e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {g.teamB.school}
-                      </span>
-                      {g.teamBRank && (
-                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 900, color: '#c9920e', flexShrink: 0 }}>#{g.teamBRank}</span>
-                      )}
-                    </div>
-
-                    {/* Result badge */}
-                    {g.result && (
-                      <span style={{
-                        fontSize: 10, fontWeight: 700, flexShrink: 0,
-                        color: g.result === 'W' ? '#2d7a3a' : '#c0392b',
-                        background: g.result === 'W' ? '#eaf5ec' : '#fdf0ef',
-                        padding: '1px 6px', borderRadius: 4
-                      }}>{g.result}</span>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )
           })()}
