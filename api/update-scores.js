@@ -85,7 +85,7 @@ async function espnFetch(url) {
 async function fetchWeekGames(year, week, seasontype) {
   try {
     const data = await espnFetch(
-      `${ESPN_WEB}/scoreboard?year=${year}&week=${week}&seasontype=${seasontype}&limit=200&groups=80`
+      `${ESPN_WEB}/scoreboard?year=${year}&week=${week}&seasontype=${seasontype}&limit=300&groups=80`
     )
     return (data.events || []).map(e => ({ ...e, _seasontype: seasontype }))
   } catch(e) {
@@ -123,7 +123,7 @@ async function fetchRankings(year, week, poll) {
 function parseEvent(event, draftedEspnIds) {
   const comp = event.competitions?.[0]
   if (!comp) return null
-  if (!comp.status?.type?.completed) return null
+  const completed = comp.status?.type?.completed; if (!completed && completed !== "true") return null
 
   const home = comp.competitors?.find(c => c.homeAway === 'home')
   const away = comp.competitors?.find(c => c.homeAway === 'away')
