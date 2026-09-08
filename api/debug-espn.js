@@ -11,7 +11,7 @@ module.exports = async function handler(req, res) {
   // Test 1: site.web.api.espn.com scoreboard
   try {
     const r = await fetch(
-      'https://site.web.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?year=2026&week=1&seasontype=2&limit=5&groups=80',
+      'https://site.web.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?year=2026&week=1&seasontype=2&limit=300&groups=80',
       { headers }
     )
     results.web_scoreboard_status = r.status
