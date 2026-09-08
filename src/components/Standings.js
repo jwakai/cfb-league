@@ -35,6 +35,20 @@ const TEAM_ESPN_IDS = {
   'North Texas': 249, 'East Carolina': 151, 'Old Dominion': 295,
   'Maryland': 120, 'Rutgers': 164, 'New Mexico': 167,
   'Central Michigan': 2117, 'UAB': 5,
+  'New Mexico St': 2464, 'Sam Houston': 2698,
+  'Tarleton St': 2623, 'Montana': 2447, 'Chattanooga': 2065,
+  'Gardner Webb': 2261, 'Sacred Heart': 2678, 'Stony Brook': 2754,
+  'Duquesne': 2226, 'East Tennessee St': 2229, 'Incarnate Word': 2309,
+  'Bryant': 2050, 'SE Louisiana': 2571, 'Alabama A&M': 2006,
+  'Alcorn St': 2029, 'Prairie View A&M': 2546, 'McNeese St': 2341,
+  'Alabama St': 2016, 'North Carolina A&T': 2502, 'Idaho': 231,
+  'Montana St': 202, 'Missouri St': 2415, 'Murray St': 2453,
+  'Rhode Island': 311, 'Abilene Christian': 2032, 'Austin Peay': 2046,
+  'Davidson': 2197, 'Lehigh': 119, 'Maine': 160, 'Lafayette': 113,
+  'Bucknell': 70, 'UC Davis': 2198, 'North Dakota St': 2803,
+  'Tennessee St': 2634, 'Massachusetts': 166, 'Mercer': 2433,
+  'Morgan St': 2450, 'Texas Southern': 2638, 'Portland St': 292,
+  'Mississippi Valley St': 2440,
 }
 
 function teamLogoUrl(school) {
@@ -623,7 +637,17 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
             }
 
             return (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: featuredGames.length > 4
+                  ? `repeat(${featuredGames.length}, minmax(120px, 1fr))`
+                  : 'repeat(3, 1fr)',
+                gap: 6,
+                overflowX: featuredGames.length > 4 ? 'auto' : 'visible',
+                WebkitOverflowScrolling: 'touch',
+                scrollSnapType: featuredGames.length > 4 ? 'x mandatory' : 'none',
+                paddingBottom: featuredGames.length > 4 ? 4 : 0,
+              }}>
                 {featuredGames.map((g, i) => {
                   const homeScore = g.home ? g.schoolScore : g.opponentScore
                   const awayScore = g.home ? g.opponentScore : g.schoolScore
@@ -633,6 +657,8 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
                       background: '#f9f9f9', borderRadius: 8,
                       border: '0.5px solid var(--border)',
                       padding: '8px 6px 6px',
+                      scrollSnapAlign: 'start',
+                      minWidth: featuredGames.length > 4 ? 120 : 'unset',
                     }}>
                       {/* Priority tag */}
                       <div>
