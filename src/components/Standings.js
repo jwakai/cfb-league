@@ -599,7 +599,6 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
                   teamAManager: managerBySchool[team.school],
                   teamBManager: managerBySchool[game.opponent],
                   isRivalry,
-                  isTop25,
                   bothRanked,
                   priority,
                   home: game.home,
