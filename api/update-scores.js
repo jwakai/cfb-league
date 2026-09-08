@@ -66,12 +66,17 @@ const SCHOOL_TO_ESPN_ID = Object.fromEntries(
 )
 
 // ── ESPN API fetch helpers ───────────────────────────────────
-const ESPN_BASE = 'https://site.api.espn.com/apis/site/v2/sports/football/college-football'
-const ESPN_WEB  = 'https://site.web.api.espn.com/apis/site/v2/sports/football/college-football'
+// Use site.web.api.espn.com for all requests — site.api.espn.com blocks server-side calls
+const ESPN_WEB = 'https://site.web.api.espn.com/apis/site/v2/sports/football/college-football'
 
 async function espnFetch(url) {
   const res = await fetch(url, {
-    headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }
+    headers: {
+      'Accept': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Referer': 'https://www.espn.com/',
+      'Origin': 'https://www.espn.com',
+    }
   })
   if (!res.ok) throw new Error(`ESPN ${res.status}: ${url}`)
   return res.json()
@@ -80,7 +85,7 @@ async function espnFetch(url) {
 async function fetchWeekGames(year, week, seasontype) {
   try {
     const data = await espnFetch(
-      `${ESPN_BASE}/scoreboard?year=${year}&week=${week}&seasontype=${seasontype}&limit=200`
+      `${ESPN_WEB}/scoreboard?year=${year}&week=${week}&seasontype=${seasontype}&limit=200&groups=80`
     )
     return (data.events || []).map(e => ({ ...e, _seasontype: seasontype }))
   } catch(e) {
