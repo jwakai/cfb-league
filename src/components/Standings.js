@@ -246,7 +246,7 @@ function TeamRow({ team, openTeam, setOpenTeam }) {
             )}
           </div>
           <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
-            {team.nextOpponent ? `Next: ${team.nextOpponent}` : 'Off-season'}
+            {team.nextOpponent ? `Next: ${team.nextOpponent}` : team.lastGame ? `Last: ${team.lastGame}` : 'No games yet'}
           </div>
         </div>
 
@@ -469,7 +469,7 @@ function GlobalTeamRow({ team, managerName, rank }) {
 }
 
 // Set to true at end of season to enable gold highlight, medals, and final standings styling
-const SEASON_COMPLETE = false
+const SEASON_COMPLETE = true
 
 export default function Standings({ standings, maxPoints, season, currentWeek, weeklyLeader }) {
   const [openManager, setOpenManager] = useState(null)
@@ -706,18 +706,7 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
           <div style={{ fontSize: 9, color: 'var(--text-secondary)', marginTop: 2 }}>{topTeamSub}</div>
           <div style={{ fontSize: 9, color: '#c9920e', marginTop: 8, fontWeight: 600 }}>Tap to see all teams ›</div>
 
-          {/* Season leader below */}
-          <div style={{ borderTop: '0.5px solid var(--border)', marginTop: 10, paddingTop: 10 }}>
-            <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>
-              Season Leader
-            </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1, textTransform: 'uppercase' }}>
-              {leader?.name}
-            </div>
-            <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>
-              {leader?.totalPoints?.toLocaleString()} pts
-            </div>
-          </div>
+
         </div>
 
       </div>
