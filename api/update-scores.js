@@ -146,8 +146,11 @@ function parseEvent(event, draftedEspnIds) {
   const isCfp = notes.includes('first round') || notes.includes('quarterfinal') ||
     notes.includes('semifinal') || notes.includes('national championship') ||
     notes.includes('cfp')
-  const isConfChamp = !isCfp && (
-    notes.includes('championship') || comp.conferenceCompetition === true
+  // Only flag CCG if week 14+ AND notes explicitly mention championship
+  // Never use comp.conferenceCompetition — it flags ALL conference games
+  const weekNum = event.week?.number || 0
+  const isConfChamp = !isCfp && weekNum >= 14 && (
+    notes.includes('championship') || notes.includes('title game')
   )
   const isBowl = !isCfp && !isConfChamp && seasontype === 3
 
