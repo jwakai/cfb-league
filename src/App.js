@@ -109,6 +109,8 @@ export default function App() {
             isBowl: g.is_bowl,
             isConfChamp: g.is_conference_championship,
             cfpRound: g.cfp_round,
+            isRival: g.is_rival,
+            pointsEarned: g.points_earned,
           })),
         })
       })
