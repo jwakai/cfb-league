@@ -357,8 +357,23 @@ module.exports = async function handler(req, res) {
       if (error) throw error
     }
     if (newScoringEvents.length > 0) {
-      const { error } = await supabase.from('Scoring_Events').insert(newScoringEvents)
-      if (error) throw error
+      // Use upsert to avoid duplicate key errors killing the whole batch
+      const { error } = await supabase
+        .from('Scoring_Events')
+        .upsert(newScoringEvents, { onConflict: 'game_id', ignoreDuplicates: true })
+      if (error) {
+        // Fall back to inserting one by one so one failure doesn't block the rest
+        console.warn('[update-scores] Batch upsert failed, trying one by one:', error.message)
+        let inserted = 0
+        for (const evt of newScoringEvents) {
+          const { error: e } = await supabase
+            .from('Scoring_Events')
+            .upsert(evt, { onConflict: 'game_id', ignoreDuplicates: true })
+          if (!e) inserted++
+          else console.warn('[update-scores] Event insert failed:', evt.game_id, e.message)
+        }
+        console.log(`[update-scores] Inserted ${inserted}/${newScoringEvents.length} events individually`)
+      }
     }
 
     return res.status(200).json({
