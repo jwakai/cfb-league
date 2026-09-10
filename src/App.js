@@ -9,6 +9,8 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [season, setSeason] = useState(2026)
+  const [espnWeek, setEspnWeek] = useState(null)
+  const [upcomingGames, setUpcomingGames] = useState([])
 
   useEffect(() => {
     fetchStandings()
@@ -18,28 +20,68 @@ export default function App() {
     setLoading(true)
     setError(null)
     try {
+      // Fetch ESPN current week + upcoming schedule in parallel with Supabase
+      const espnHeaders = {
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0',
+        'Referer': 'https://www.espn.com/',
+      }
+      const ESPN = 'https://site.web.api.espn.com/apis/site/v2/sports/football/college-football'
+
       const [
         { data: managers, error: mgrError },
         { data: teams, error: teamsError },
         { data: rosters, error: rosterError },
         { data: events, error: eventsError },
         { data: gameRows, error: gamesError },
+        espnScoreboard,
       ] = await Promise.all([
         supabase.from('Managers').select('*'),
         supabase.from('Teams').select('*'),
         supabase.from('Managers_Teams').select('*').eq('season', season),
         supabase.from('Scoring_Events').select('*').eq('season', season),
-        supabase.from('team_games').select('*').eq('season', season).limit(5000), // v2
+        supabase.from('team_games').select('*').eq('season', season).limit(5000),
+        fetch(`${ESPN}/scoreboard?year=${season}&seasontype=2&limit=300&groups=80`, { headers: espnHeaders })
+          .then(r => r.json()).catch(() => null),
       ])
 
       if (mgrError) throw mgrError
       if (teamsError) throw teamsError
       if (rosterError) throw rosterError
       if (eventsError) throw eventsError
-      // team_games may not exist yet — handle gracefully
       if (gamesError && !gamesError.message?.includes('does not exist')) throw gamesError
 
       const allGames = gameRows || []
+
+      // Parse ESPN current week and upcoming games
+      const fetchedEspnWeek = espnScoreboard?.week?.number || null
+      if (fetchedEspnWeek) setEspnWeek(fetchedEspnWeek)
+
+      // Build upcoming games list from ESPN scoreboard for current week
+      const upcoming = []
+      if (espnScoreboard?.events) {
+        espnScoreboard.events.forEach(event => {
+          const comp = event.competitions?.[0]
+          if (!comp) return
+          const home = comp.competitors?.find(c => c.homeAway === 'home')
+          const away = comp.competitors?.find(c => c.homeAway === 'away')
+          if (!home || !away) return
+          upcoming.push({
+            week: event.week?.number,
+            homeId: Number(home.team?.id),
+            awayId: Number(away.team?.id),
+            homeName: home.team?.displayName,
+            awayName: away.team?.displayName,
+            homeRank: home.curatedRank?.current > 0 && home.curatedRank?.current <= 25 ? home.curatedRank.current : null,
+            awayRank: away.curatedRank?.current > 0 && away.curatedRank?.current <= 25 ? away.curatedRank.current : null,
+            completed: comp.status?.type?.completed,
+            homeScore: home.score,
+            awayScore: away.score,
+            date: comp.date,
+          })
+        })
+      }
+      setUpcomingGames(upcoming)
 
       const managerMap = {}
       managers.forEach(mgr => {
@@ -138,9 +180,10 @@ export default function App() {
         team.points > (best?.points || 0) ? team : best, null)
       if (sorted.length > 0) sorted[0].globalTopTeam = globalTopTeam
 
-      // Current week — highest week number with completed games
+      // Current week — use ESPN's live week number, fall back to max completed week
       const completedWeeks = allGames.filter(g => g.result !== null).map(g => g.week)
-      const currentWeek = completedWeeks.length > 0 ? Math.max(...completedWeeks) : null
+      const maxCompletedWeek = completedWeeks.length > 0 ? Math.max(...completedWeeks) : null
+      const currentWeek = fetchedEspnWeek || maxCompletedWeek
 
       // Weekly high scorer — manager with most points from current week's games
       let weeklyLeader = null
@@ -157,7 +200,7 @@ export default function App() {
         }
       }
 
-      setStandings(sorted.map(s => ({ ...s, currentWeek, weeklyLeader })))
+      setStandings(sorted.map(s => ({ ...s, currentWeek, weeklyLeader, upcomingGames: upcoming })))
     } catch (err) {
       console.error(err)
       setError(`Error: ${err.message}`)
@@ -167,8 +210,9 @@ export default function App() {
   }
 
   const maxPoints = standings.length > 0 ? standings[0].totalPoints : 1
-  const currentWeek = standings[0]?.currentWeek || null
+  const currentWeek = espnWeek || standings[0]?.currentWeek || null
   const weeklyLeader = standings[0]?.weeklyLeader || null
+  const allUpcomingGames = upcomingGames
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
@@ -198,6 +242,7 @@ export default function App() {
             season={season}
             currentWeek={currentWeek}
             weeklyLeader={weeklyLeader}
+            upcomingGames={allUpcomingGames}
           />
         )}
       </main>
