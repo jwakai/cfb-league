@@ -115,28 +115,31 @@ function ScheduleList({ schedule, espnId, season }) {
         const parsed = events.map(e => {
           const comp = e.competitions?.[0]
           if (!comp) return null
-          // Find which competitor is our team by matching ESPN ID
-          const homeComp = comp.competitors?.find(c => c.homeAway === 'home')
-          const awayComp = comp.competitors?.find(c => c.homeAway === 'away')
-          const isHome = String(homeComp?.team?.id) === String(espnId)
-          const me = isHome ? homeComp : awayComp
-          const opp = isHome ? awayComp : homeComp
-          const oppName = opp?.team?.displayName || ''
-          // Map ESPN display name back to our school name
+          // Find which competitor is our team — try both ID formats
+          const allComps = comp.competitors || []
+          const me = allComps.find(c => String(c.team?.id) === String(espnId))
+          const opp = allComps.find(c => String(c.team?.id) !== String(espnId))
+          const isHome = me?.homeAway === 'home'
+          const oppName = opp?.team?.displayName || opp?.team?.name || ''
           const oppSchool = Object.entries(TEAM_ESPN_IDS).find(([s, id]) => id === Number(opp?.team?.id))?.[0] || oppName
           const completed = comp.status?.type?.completed === true
-          const myScore = completed && me?.score != null ? parseInt(me.score, 10) : null
-          const oppScore = completed && opp?.score != null ? parseInt(opp.score, 10) : null
-          const won = completed && myScore !== null && oppScore !== null && myScore > oppScore
+          // ESPN team schedule uses winner boolean — more reliable than score comparison
+          const won = completed && (me?.winner === true)
+          const myScore = completed && me?.score != null && me.score !== '' ? parseInt(me.score, 10) : null
+          const oppScore = completed && opp?.score != null && opp.score !== '' ? parseInt(opp.score, 10) : null
           const notes = (comp.notes?.[0]?.headline || e.name || '').toLowerCase()
           const isCfp = notes.includes('cfp') || notes.includes('first round') || notes.includes('quarterfinal') || notes.includes('semifinal') || notes.includes('national championship')
           const isConfChamp = !isCfp && e.week?.number >= 14 && notes.includes('championship')
           const isBowl = !isCfp && !isConfChamp && e.season?.type === 3
+          // Only show result if truly completed with valid scores
+          const result = completed
+            ? (me?.winner === true ? 'W' : opp?.winner === true ? 'L' : null)
+            : null
           return {
             week: e.week?.number || 0,
             opponent: oppSchool,
             home: isHome,
-            result: completed ? (won ? 'W' : 'L') : null,
+            result,
             schoolScore: myScore,
             opponentScore: oppScore,
             isCfp, isConfChamp, isBowl,
