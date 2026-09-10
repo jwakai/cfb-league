@@ -125,8 +125,19 @@ function ScheduleList({ schedule, espnId, season }) {
           const completed = comp.status?.type?.completed === true
           // ESPN team schedule uses winner boolean — more reliable than score comparison
           const won = completed && (me?.winner === true)
-          const myScore = completed && me?.score != null && me.score !== '' ? parseInt(me.score, 10) : null
-          const oppScore = completed && opp?.score != null && opp.score !== '' ? parseInt(opp.score, 10) : null
+          // ESPN team schedule stores scores in multiple possible locations
+          // Try score, then linescores total, then homeScore/awayScore on competition
+          const parseScore = (competitor) => {
+            if (competitor?.score != null && competitor.score !== '' && !isNaN(parseInt(competitor.score, 10)))
+              return parseInt(competitor.score, 10)
+            const linescores = competitor?.linescores
+            if (linescores?.length) {
+              return linescores.reduce((sum, q) => sum + (parseInt(q.value || q.displayValue || 0, 10)), 0)
+            }
+            return null
+          }
+          const myScore = completed ? parseScore(me) : null
+          const oppScore = completed ? parseScore(opp) : null
           const notes = (comp.notes?.[0]?.headline || e.name || '').toLowerCase()
           const isCfp = notes.includes('cfp') || notes.includes('first round') || notes.includes('quarterfinal') || notes.includes('semifinal') || notes.includes('national championship')
           const isConfChamp = !isCfp && e.week?.number >= 14 && notes.includes('championship')
@@ -163,9 +174,22 @@ function ScheduleList({ schedule, espnId, season }) {
     if (!fullSchedule || !schedule) return base
     return base.map(espnGame => {
       const dbGame = schedule.find(g =>
-        g.week === espnGame.week && g.opponent === espnGame.opponent
+        g.week === espnGame.week &&
+        (g.opponent === espnGame.opponent || espnGame.opponent?.includes(g.opponent) || g.opponent?.includes(espnGame.opponent))
       )
-      return dbGame ? { ...espnGame, pointsEarned: dbGame.pointsEarned, isRival: dbGame.isRival, opponentRank: dbGame.opponentRank ?? espnGame.opponentRank } : espnGame
+      if (dbGame) {
+        return {
+          ...espnGame,
+          // Always prefer Supabase scores for completed games — more reliable
+          schoolScore: dbGame.schoolScore ?? espnGame.schoolScore,
+          opponentScore: dbGame.opponentScore ?? espnGame.opponentScore,
+          result: dbGame.result ?? espnGame.result,
+          pointsEarned: dbGame.pointsEarned,
+          isRival: dbGame.isRival,
+          opponentRank: dbGame.opponentRank ?? espnGame.opponentRank,
+        }
+      }
+      return espnGame
     })
   }, [fullSchedule, schedule])
 
@@ -242,9 +266,11 @@ function ScheduleList({ schedule, espnId, season }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                   {game.result ? (
                     <>
-                      <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
-                        {game.schoolScore}–{game.opponentScore}
-                      </span>
+                      {game.schoolScore != null && game.opponentScore != null && (
+                        <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+                          {game.schoolScore}–{game.opponentScore}
+                        </span>
+                      )}
                       <span style={{
                         fontSize: 10, fontWeight: 700,
                         color: game.result === 'W' ? '#2d7a3a' : '#c0392b',
