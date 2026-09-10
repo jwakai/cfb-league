@@ -311,7 +311,7 @@ function TeamDetailGrid({ team }) {
   )
 }
 
-function TeamRow({ team, openTeam, setOpenTeam }) {
+function TeamRow({ team, openTeam, setOpenTeam, season }) {
   const open = openTeam === team.school
   const record = team.record || null
 
@@ -487,7 +487,7 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
       {open && (
         <div className="dropdown-animate" style={{ padding: '0 13px 10px 40px', borderTop: '0.5px solid #e5c96a' }}>
           {mgr.teams.map(team => (
-            <TeamRow key={team.school} team={team} openTeam={openTeam} setOpenTeam={setOpenTeam} />
+            <TeamRow key={team.school} team={team} openTeam={openTeam} setOpenTeam={setOpenTeam} season={season} />
           ))}
         </div>
       )}
