@@ -377,7 +377,7 @@ function TeamRow({ team, openTeam, setOpenTeam }) {
   )
 }
 
-function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpenManager }) {
+function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpenManager, season }) {
   const [openTeam, setOpenTeam] = useState(null)
   const open = openManager === mgr.name
   const isLeader = rank === 1 && seasonComplete
@@ -862,7 +862,7 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {standings.map((mgr, i) => (
           <ManagerRow key={mgr.name} mgr={mgr} rank={i + 1} maxPoints={maxPoints}
-            seasonComplete={SEASON_COMPLETE} openManager={openManager} setOpenManager={setOpenManager} />
+            seasonComplete={SEASON_COMPLETE} openManager={openManager} setOpenManager={setOpenManager} season={season} />
         ))}
       </div>
 
