@@ -8,71 +8,49 @@ module.exports = async function handler(req, res) {
     'Origin': 'https://www.espn.com',
   }
 
-  // Test 1: site.web.api.espn.com scoreboard
+  const ESPN = 'https://site.web.api.espn.com/apis/site/v2/sports/football/college-football'
+
+  // Test Week 1 completion status
   try {
-    const r = await fetch(
-      'https://site.web.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?year=2026&week=1&seasontype=2&limit=300&groups=80',
-      { headers }
-    )
-    results.web_scoreboard_status = r.status
-    if (r.ok) {
-      const d = await r.json()
-      results.web_scoreboard_events = d.events?.length ?? 0
-      results.web_scoreboard_sample = d.events?.slice(0,2).map(e => ({
-        name: e.name,
-        week: e.week?.number,
-        completed: e.competitions?.[0]?.status?.type?.completed,
-        home: e.competitions?.[0]?.competitors?.find(c=>c.homeAway==='home')?.team?.displayName,
-        away: e.competitions?.[0]?.competitors?.find(c=>c.homeAway==='away')?.team?.displayName,
-        homeId: e.competitions?.[0]?.competitors?.find(c=>c.homeAway==='home')?.team?.id,
-        awayId: e.competitions?.[0]?.competitors?.find(c=>c.homeAway==='away')?.team?.id,
-        homeScore: e.competitions?.[0]?.competitors?.find(c=>c.homeAway==='home')?.score,
-        awayScore: e.competitions?.[0]?.competitors?.find(c=>c.homeAway==='away')?.score,
-      }))
-    } else {
-      results.web_scoreboard_error = await r.text()
-    }
-  } catch(e) {
-    results.web_scoreboard_exception = e.message
-  }
+    const r = await fetch(`${ESPN}/scoreboard?year=2026&week=1&seasontype=2&limit=300&groups=80`, { headers })
+    const d = await r.json()
+    const events = d.events || []
+    const completed = events.filter(e => e.competitions?.[0]?.status?.type?.completed)
+    const incomplete = events.filter(e => !e.competitions?.[0]?.status?.type?.completed)
+    results.week1_total = events.length
+    results.week1_completed = completed.length
+    results.week1_incomplete = incomplete.length
+    results.week1_incomplete_games = incomplete.slice(0,5).map(e => ({
+      name: e.name,
+      status: e.competitions?.[0]?.status?.type?.description
+    }))
+  } catch(e) { results.week1_error = e.message }
 
-  // Test 2: site.api.espn.com (original)
+  // Test Week 2
   try {
-    const r = await fetch(
-      'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?year=2026&week=1&seasontype=2&limit=5',
-      { headers }
-    )
-    results.api_scoreboard_status = r.status
-    if (r.ok) {
-      const d = await r.json()
-      results.api_scoreboard_events = d.events?.length ?? 0
-    } else {
-      results.api_scoreboard_error = await r.text()
-    }
-  } catch(e) {
-    results.api_scoreboard_exception = e.message
-  }
+    const r = await fetch(`${ESPN}/scoreboard?year=2026&week=2&seasontype=2&limit=300&groups=80`, { headers })
+    const d = await r.json()
+    const events = d.events || []
+    const completed = events.filter(e => e.competitions?.[0]?.status?.type?.completed)
+    results.week2_total = events.length
+    results.week2_completed = completed.length
+    results.week2_sample = events.slice(0,3).map(e => ({
+      name: e.name,
+      week: e.week?.number,
+      completed: e.competitions?.[0]?.status?.type?.completed,
+      status: e.competitions?.[0]?.status?.type?.description,
+      homeScore: e.competitions?.[0]?.competitors?.find(c=>c.homeAway==='home')?.score,
+      awayScore: e.competitions?.[0]?.competitors?.find(c=>c.homeAway==='away')?.score,
+    }))
+  } catch(e) { results.week2_error = e.message }
 
-  // Test 3: ESPN summary endpoint for a specific game (Indiana vs North Texas)
+  // Check what week ESPN calendar thinks we're in
   try {
-    const r = await fetch(
-      'https://site.web.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=401772837',
-      { headers }
-    )
-    results.summary_status = r.status
-    if (r.ok) {
-      const d = await r.json()
-      results.summary_teams = d.boxscore?.teams?.map(t => t.team?.displayName)
-    } else {
-      results.summary_error = await r.text()
-    }
-  } catch(e) {
-    results.summary_exception = e.message
-  }
+    const r = await fetch(`${ESPN}/scoreboard?year=2026&seasontype=2&limit=5&groups=80`, { headers })
+    const d = await r.json()
+    results.current_espn_week = d.week?.number
+    results.calendar_sample = d.calendar?.slice(0,3)
+  } catch(e) { results.calendar_error = e.message }
 
-  // Test 4: Check Supabase env vars
-  results.supabase_url_set = !!process.env.REACT_APP_SUPABASE_URL
-  results.supabase_key_set = !!process.env.SUPABASE_SERVICE_KEY
-
-  return res.status(200).json(results, null, 2)
+  return res.status(200).json(results)
 }
