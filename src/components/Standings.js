@@ -97,17 +97,89 @@ function getWinLabel(game) {
   return null
 }
 
-function ScheduleList({ schedule }) {
-  if (!schedule || schedule.length === 0) {
+function ScheduleList({ schedule, espnId, season }) {
+  const { useState, useEffect } = React
+  const [fullSchedule, setFullSchedule] = React.useState(null)
+  const [loadingSchedule, setLoadingSchedule] = React.useState(false)
+
+  useEffect(() => {
+    if (!espnId || !season) return
+    setLoadingSchedule(true)
+    fetch(
+      `https://site.web.api.espn.com/apis/site/v2/sports/football/college-football/teams/${espnId}/schedule?season=${season}`,
+      { headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.espn.com/' } }
+    )
+      .then(r => r.json())
+      .then(data => {
+        const events = data.events || []
+        const parsed = events.map(e => {
+          const comp = e.competitions?.[0]
+          if (!comp) return null
+          const isHome = comp.competitors?.find(c => c.homeAway === 'home')?.team?.id === String(espnId)
+          const opp = comp.competitors?.find(c => c.homeAway === (isHome ? 'away' : 'home'))
+          const me = comp.competitors?.find(c => c.homeAway === (isHome ? 'home' : 'away'))
+          const oppName = opp?.team?.displayName || ''
+          // Map ESPN display name back to our school name
+          const oppSchool = Object.entries(TEAM_ESPN_IDS).find(([s, id]) => id === Number(opp?.team?.id))?.[0] || oppName
+          const completed = comp.status?.type?.completed
+          const myScore = completed ? parseInt(me?.score || 0) : null
+          const oppScore = completed ? parseInt(opp?.score || 0) : null
+          const won = completed && myScore > oppScore
+          const notes = (comp.notes?.[0]?.headline || e.name || '').toLowerCase()
+          const isCfp = notes.includes('cfp') || notes.includes('first round') || notes.includes('quarterfinal') || notes.includes('semifinal') || notes.includes('national championship')
+          const isConfChamp = !isCfp && e.week?.number >= 14 && notes.includes('championship')
+          const isBowl = !isCfp && !isConfChamp && e.season?.type === 3
+          return {
+            week: e.week?.number || 0,
+            opponent: oppSchool,
+            home: isHome,
+            result: completed ? (won ? 'W' : 'L') : null,
+            schoolScore: myScore,
+            opponentScore: oppScore,
+            isCfp, isConfChamp, isBowl,
+            cfpRound: null,
+            date: comp.date,
+            // Merge points from Supabase schedule
+            pointsEarned: null,
+            isRival: false,
+            opponentRank: opp?.curatedRank?.current <= 25 ? opp.curatedRank.current : null,
+          }
+        }).filter(Boolean)
+        setFullSchedule(parsed)
+      })
+      .catch(() => setFullSchedule(null))
+      .finally(() => setLoadingSchedule(false))
+  }, [espnId, season])
+
+  // Merge ESPN schedule with Supabase points data
+  const mergedSchedule = React.useMemo(() => {
+    const base = fullSchedule || schedule || []
+    if (!fullSchedule || !schedule) return base
+    return base.map(espnGame => {
+      const dbGame = schedule.find(g =>
+        g.week === espnGame.week && g.opponent === espnGame.opponent
+      )
+      return dbGame ? { ...espnGame, pointsEarned: dbGame.pointsEarned, isRival: dbGame.isRival, opponentRank: dbGame.opponentRank ?? espnGame.opponentRank } : espnGame
+    })
+  }, [fullSchedule, schedule])
+
+  if (loadingSchedule) {
+    return <div style={{ fontSize: 9, color: 'var(--text-muted)', padding: '8px 0' }}>Loading schedule...</div>
+  }
+
+  const displaySchedule = mergedSchedule.length > 0 ? mergedSchedule : (schedule || [])
+
+  if (displaySchedule.length === 0) {
     return (
       <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
         No games recorded yet.
       </div>
     )
   }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-      {[...schedule]
+      {[...displaySchedule]
         .sort((a, b) => {
           const typeOrder = (g) => g.isCfp ? 3 : g.isBowl ? 2 : g.isConfChamp ? 1 : 0
           if (typeOrder(a) !== typeOrder(b)) return typeOrder(a) - typeOrder(b)
@@ -138,7 +210,8 @@ function ScheduleList({ schedule }) {
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '5px 0',
-                borderBottom: i < arr.length - 1 ? '0.5px solid #f0f0f0' : 'none'
+                borderBottom: i < arr.length - 1 ? '0.5px solid #f0f0f0' : 'none',
+                opacity: game.result === null && !game.completed ? 0.6 : 1,
               }}>
                 <span style={{
                   fontSize: 9, color: isPostseason ? '#c9920e' : 'var(--text-muted)',
@@ -152,6 +225,9 @@ function ScheduleList({ schedule }) {
                     <img src={teamLogoUrl(game.opponent)} alt={game.opponent}
                       style={{ width: 14, height: 14, objectFit: 'contain', flexShrink: 0 }}
                       onError={e => { e.target.style.display = 'none' }} />
+                  )}
+                  {game.opponentRank && (
+                    <span style={{ fontSize: 8, color: '#c9920e', fontWeight: 700 }}>#{game.opponentRank}</span>
                   )}
                   <span style={{ fontSize: 10, color: '#1c1c1e', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {game.opponent}
@@ -178,7 +254,9 @@ function ScheduleList({ schedule }) {
                       )}
                     </>
                   ) : (
-                    <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>Upcoming</span>
+                    <span style={{ fontSize: 9, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                      {game.date ? new Date(game.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Upcoming'}
+                    </span>
                   )}
                 </div>
               </div>
@@ -291,7 +369,7 @@ function TeamRow({ team, openTeam, setOpenTeam }) {
             <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 8 }}>
               Schedule
             </div>
-            <ScheduleList schedule={team.schedule} />
+            <ScheduleList schedule={team.schedule} espnId={TEAM_ESPN_IDS[team.school]} season={season} />
           </div>
         </div>
       )}
@@ -479,7 +557,7 @@ function GlobalTeamRow({ team, managerName, rank }) {
             <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 8 }}>
               Schedule
             </div>
-            <ScheduleList schedule={team.schedule} />
+            <ScheduleList schedule={team.schedule} espnId={TEAM_ESPN_IDS[team.school]} season={season} />
           </div>
         </div>
       )}
@@ -647,19 +725,14 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
               )
             }
 
+            const [featuredPage, setFeaturedPage] = React.useState(0)
+            const totalPages = Math.ceil(featuredGames.length / 3)
+            const pageGames = featuredGames.slice(featuredPage * 3, featuredPage * 3 + 3)
+
             return (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: featuredGames.length > 4
-                  ? `repeat(${featuredGames.length}, minmax(120px, 1fr))`
-                  : 'repeat(3, 1fr)',
-                gap: 6,
-                overflowX: featuredGames.length > 4 ? 'auto' : 'visible',
-                WebkitOverflowScrolling: 'touch',
-                scrollSnapType: featuredGames.length > 4 ? 'x mandatory' : 'none',
-                paddingBottom: featuredGames.length > 4 ? 4 : 0,
-              }}>
-                {featuredGames.map((g, i) => (
+              <div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                {pageGames.map((g, i) => (
                   <div key={i} style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                     background: '#f9f9f9', borderRadius: 8,
@@ -721,6 +794,28 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
                     </div>
                   </div>
                 ))}
+                </div>
+                {totalPages > 1 && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8 }}>
+                    <button
+                      onClick={() => setFeaturedPage(p => Math.max(0, p - 1))}
+                      disabled={featuredPage === 0}
+                      style={{ background: 'none', border: 'none', cursor: featuredPage === 0 ? 'default' : 'pointer', opacity: featuredPage === 0 ? 0.3 : 1, fontSize: 14, color: '#c9920e', padding: '0 4px' }}
+                    >‹</button>
+                    {Array.from({ length: totalPages }).map((_, i) => (
+                      <div key={i} onClick={() => setFeaturedPage(i)} style={{
+                        width: 6, height: 6, borderRadius: '50%', cursor: 'pointer',
+                        background: i === featuredPage ? '#c9920e' : '#d1d1d6',
+                        transition: 'background 0.2s',
+                      }} />
+                    ))}
+                    <button
+                      onClick={() => setFeaturedPage(p => Math.min(totalPages - 1, p + 1))}
+                      disabled={featuredPage === totalPages - 1}
+                      style={{ background: 'none', border: 'none', cursor: featuredPage === totalPages - 1 ? 'default' : 'pointer', opacity: featuredPage === totalPages - 1 ? 0.3 : 1, fontSize: 14, color: '#c9920e', padding: '0 4px' }}
+                    >›</button>
+                  </div>
+                )}
               </div>
             )
           })()}
