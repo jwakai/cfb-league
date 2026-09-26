@@ -55,7 +55,7 @@ const TEAM_ESPN_IDS = {
   'Nevada': 2429,
   'Delaware': 41, 'Fordham': 48, 'Connecticut': 79,
   'Hampton': 218, 'Illinois St': 233, 'Rhode Island': 311,
-  'Louisiana Monroe': 2382, 'New Hampshire': 2460,
+  'Louisiana Monroe': 2382, 'UL Monroe': 2382, 'New Hampshire': 2460,
   'Drake': 2199, 'Jacksonville': 2681,
 }
 
