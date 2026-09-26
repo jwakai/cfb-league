@@ -49,6 +49,14 @@ const TEAM_ESPN_IDS = {
   'Tennessee St': 2634, 'Massachusetts': 166, 'Mercer': 2433,
   'Morgan St': 2450, 'Texas Southern': 2638, 'Portland St': 292,
   'Mississippi Valley St': 2440,
+  // Corrected/additional FCS and non-Power opponents
+  'Florida International': 2247,
+  'Eastern Michigan': 2169,
+  'Nevada': 2429,
+  'Delaware': 41, 'Fordham': 48, 'Connecticut': 79,
+  'Hampton': 218, 'Illinois St': 233, 'Rhode Island': 311,
+  'Louisiana Monroe': 2382, 'New Hampshire': 2460,
+  'Drake': 2199, 'Jacksonville': 2681,
 }
 
 function teamLogoUrl(school) {
