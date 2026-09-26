@@ -76,7 +76,7 @@ const ESPN_ID_TO_SCHOOL = {
   2247: 'Florida International', 2169: 'Eastern Michigan',
   2429: 'Nevada', 41: 'Delaware', 48: 'Fordham',
   79: 'Connecticut', 218: 'Hampton', 233: 'Illinois St',
-  311: 'Rhode Island', 2382: 'Louisiana Monroe',
+  311: 'Rhode Island', 2382: 'UL Monroe',
   2460: 'New Hampshire', 2199: 'Drake', 2681: 'Jacksonville',
 }
 
