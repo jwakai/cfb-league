@@ -696,53 +696,82 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
             })
 
             const draftedEspnIds = new Set(Object.keys(managerByEspnId).map(Number))
-
-            // Build featured games from ESPN upcoming games for current week
             const seenKeys = new Set()
             const featuredGames = []
 
-            upcomingGames.forEach(game => {
-              if (game.week !== currentWeek) return
-              const homeIsDrafted = draftedEspnIds.has(game.homeId)
-              const awayIsDrafted = draftedEspnIds.has(game.awayId)
-              if (!homeIsDrafted && !awayIsDrafted) return
+            // Primary source: ESPN scoreboard (has rankings + upcoming games)
+            // Fallback: team_games from Supabase (completed games, always available)
+            const useEspn = upcomingGames && upcomingGames.length > 0
 
-              const bothRanked = game.homeRank !== null && game.awayRank !== null
+            if (useEspn) {
+              upcomingGames.forEach(game => {
+                if (game.week !== currentWeek) return
+                const homeIsDrafted = draftedEspnIds.has(game.homeId)
+                const awayIsDrafted = draftedEspnIds.has(game.awayId)
+                if (!homeIsDrafted && !awayIsDrafted) return
 
-              // Check rivalry — is home a rival of away or vice versa
-              const homeRivals = rivalsByEspnId[game.homeId] || []
-              const awayRivals = rivalsByEspnId[game.awayId] || []
-              const isRivalry = homeRivals.includes(game.awayId) || awayRivals.includes(game.homeId)
+                const bothRanked = game.homeRank !== null && game.awayRank !== null
+                const homeRivals = rivalsByEspnId[game.homeId] || []
+                const awayRivals = rivalsByEspnId[game.awayId] || []
+                const isRivalry = homeRivals.includes(game.awayId) || awayRivals.includes(game.homeId)
+                if (!bothRanked && !isRivalry) return
 
-              if (!bothRanked && !isRivalry) return
+                const key = [game.homeId, game.awayId].sort().join('|')
+                if (seenKeys.has(key)) return
+                seenKeys.add(key)
 
-              const key = [game.homeId, game.awayId].sort().join('|')
-              if (seenKeys.has(key)) return
-              seenKeys.add(key)
+                const priority = (bothRanked && isRivalry) ? 3 : bothRanked ? 2 : 1
+                const homeSchool = Object.entries(TEAM_ESPN_IDS).find(([s,id]) => id === game.homeId)?.[0]
+                const awaySchool = Object.entries(TEAM_ESPN_IDS).find(([s,id]) => id === game.awayId)?.[0]
 
-              const priority = (bothRanked && isRivalry) ? 3 : bothRanked ? 2 : 1
-
-              // Get school names from ESPN IDs
-              const homeSchool = Object.entries(TEAM_ESPN_IDS).find(([s,id]) => id === game.homeId)?.[0]
-              const awaySchool = Object.entries(TEAM_ESPN_IDS).find(([s,id]) => id === game.awayId)?.[0]
-
-              featuredGames.push({
-                homeId: game.homeId,
-                awayId: game.awayId,
-                homeSchool: homeSchool || game.homeName,
-                awaySchool: awaySchool || game.awayName,
-                homeRank: game.homeRank,
-                awayRank: game.awayRank,
-                homeManager: managerByEspnId[game.homeId],
-                awayManager: managerByEspnId[game.awayId],
-                isRivalry,
-                bothRanked,
-                priority,
-                completed: game.completed,
-                homeScore: game.homeScore,
-                awayScore: game.awayScore,
+                featuredGames.push({
+                  homeId: game.homeId, awayId: game.awayId,
+                  homeSchool: homeSchool || game.homeName,
+                  awaySchool: awaySchool || game.awayName,
+                  homeRank: game.homeRank, awayRank: game.awayRank,
+                  homeManager: managerByEspnId[game.homeId],
+                  awayManager: managerByEspnId[game.awayId],
+                  isRivalry, bothRanked, priority,
+                  completed: game.completed,
+                  homeScore: game.homeScore, awayScore: game.awayScore,
+                })
               })
-            })
+            } else {
+              // Fallback: build from team_games (Supabase) — always works, no ESPN needed
+              allTeamsWithManager.forEach(team => {
+                if (!team.schedule) return
+                team.schedule.forEach(game => {
+                  if (game.week !== currentWeek) return
+                  if (game.isCfp || game.isBowl || game.isConfChamp) return
+
+                  const isRivalry = game.isRival
+                  const oppIsRanked = game.opponentRank !== null && game.opponentRank <= 25
+                  const teamIsRanked = !!team.currentRank
+                  const bothRanked = teamIsRanked && oppIsRanked
+                  if (!bothRanked && !isRivalry) return
+
+                  const key = [team.school, game.opponent].sort().join('|')
+                  if (seenKeys.has(key)) return
+                  seenKeys.add(key)
+
+                  const priority = (bothRanked && isRivalry) ? 3 : bothRanked ? 2 : 1
+                  const oppEspnId = TEAM_ESPN_IDS[game.opponent]
+
+                  featuredGames.push({
+                    homeSchool: game.home ? team.school : game.opponent,
+                    awaySchool: game.home ? game.opponent : team.school,
+                    homeRank: game.home ? team.currentRank : game.opponentRank,
+                    awayRank: game.home ? game.opponentRank : team.currentRank,
+                    homeManager: game.home ? managerByEspnId[TEAM_ESPN_IDS[team.school]] : managerByEspnId[oppEspnId],
+                    awayManager: game.home ? managerByEspnId[oppEspnId] : managerByEspnId[TEAM_ESPN_IDS[team.school]],
+                    isRivalry, bothRanked, priority,
+                    completed: !!game.result,
+                    homeScore: game.home ? game.schoolScore : game.opponentScore,
+                    awayScore: game.home ? game.opponentScore : game.schoolScore,
+                  })
+                })
+              })
+            }
 
             // Sort: Top25+Rivalry first, then Top25, then Rivalry
             featuredGames.sort((a, b) => b.priority - a.priority)
