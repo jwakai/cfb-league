@@ -73,6 +73,11 @@ const ESPN_ID_TO_SCHOOL = {
   2198: 'UC Davis', 2803: 'North Dakota St', 2634: 'Tennessee St',
   166: 'Massachusetts', 2433: 'Mercer', 2450: 'Morgan St',
   2638: 'Texas Southern', 292: 'Portland St', 2440: 'Mississippi Valley St',
+  2247: 'Florida International', 2169: 'Eastern Michigan',
+  2429: 'Nevada', 41: 'Delaware', 48: 'Fordham',
+  79: 'Connecticut', 218: 'Hampton', 233: 'Illinois St',
+  311: 'Rhode Island', 2382: 'Louisiana Monroe',
+  2460: 'New Hampshire', 2199: 'Drake', 2681: 'Jacksonville',
 }
 
 const SCHOOL_TO_ESPN_ID = Object.fromEntries(
@@ -365,35 +370,84 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // 7. Write to Supabase
+    // 7. Write new game rows
     if (newGameRows.length > 0) {
       const { error } = await supabase.from('team_games').insert(newGameRows)
       if (error) throw error
+      console.log(`[update-scores] Inserted ${newGameRows.length} game rows`)
     }
-    if (newScoringEvents.length > 0) {
-      // Use upsert to avoid duplicate key errors killing the whole batch
-      const { error } = await supabase
-        .from('Scoring_Events')
-        .upsert(newScoringEvents, { onConflict: 'game_id', ignoreDuplicates: true })
-      if (error) {
-        // Fall back to inserting one by one so one failure doesn't block the rest
-        console.warn('[update-scores] Batch upsert failed, trying one by one:', error.message)
-        let inserted = 0
-        for (const evt of newScoringEvents) {
-          const { error: e } = await supabase
-            .from('Scoring_Events')
-            .upsert(evt, { onConflict: 'game_id', ignoreDuplicates: true })
-          if (!e) inserted++
-          else console.warn('[update-scores] Event insert failed:', evt.game_id, e.message)
-        }
-        console.log(`[update-scores] Inserted ${inserted}/${newScoringEvents.length} events individually`)
+
+    // 8. Write new scoring events one-by-one to prevent one failure blocking the batch
+    let eventsInserted = 0
+    for (const evt of newScoringEvents) {
+      if (existingEventIds.has(evt.game_id)) continue
+      const { error } = await supabase.from('Scoring_Events').insert(evt)
+      if (!error) {
+        eventsInserted++
+        existingEventIds.add(evt.game_id)
+      } else {
+        console.warn(`[update-scores] Event insert failed: ${evt.game_id}`, error.message)
       }
+    }
+
+    // 9. RECONCILIATION — find team_games with points but no Scoring_Events entry
+    // This catches any gaps from prior failed inserts and fixes them automatically
+    const { data: orphanedGames } = await supabase
+      .from('team_games')
+      .select('game_id, school, points_earned, week, is_cfp, is_bowl, is_conference_championship, cfp_round, is_rival, opponent_rank')
+      .eq('season', season)
+      .gt('points_earned', 0)
+
+    let reconciledCount = 0
+    for (const og of (orphanedGames || [])) {
+      if (existingEventIds.has(og.game_id)) continue
+
+      // Find team and manager
+      const team = draftedTeams.find(t => t.school === og.school)
+      if (!team) continue
+      const managerId = rosterByTeamId[team.id]
+      if (!managerId) continue
+
+      // Derive event type from game flags
+      let eventType = 'regular_win'
+      if (og.is_cfp) {
+        if (og.cfp_round === 'championship') eventType = 'national_championship'
+        else if (og.cfp_round === 'semifinal') eventType = 'cfp_semifinal_win'
+        else if (og.cfp_round === 'quarterfinal') eventType = 'cfp_quarterfinal_win'
+        else if (og.cfp_round === 'firstround') eventType = 'cfp_round1_win'
+      } else if (og.is_conference_championship) {
+        eventType = 'conf_champ_win'
+      } else if (og.is_bowl) {
+        eventType = 'bowl_win'
+      } else if (og.is_rival && og.opponent_rank) {
+        eventType = 'rival_top25_win'
+      } else if (og.is_rival) {
+        eventType = 'rival_win'
+      } else if (og.opponent_rank) {
+        eventType = 'top25_win'
+      }
+
+      const { error } = await supabase.from('Scoring_Events').insert({
+        season, manager_id: managerId, team_id: team.id,
+        event_type: eventType, points: og.points_earned,
+        week: og.week, game_id: og.game_id,
+      })
+      if (!error) {
+        reconciledCount++
+        existingEventIds.add(og.game_id)
+        console.log(`[reconcile] Fixed missing event: ${og.school} ${og.game_id} +${og.points_earned}pts`)
+      }
+    }
+
+    if (reconciledCount > 0) {
+      console.log(`[reconcile] Fixed ${reconciledCount} orphaned scoring events`)
     }
 
     return res.status(200).json({
       success: true, season,
       newGames: newGameRows.length,
-      newScoringEvents: newScoringEvents.length,
+      newScoringEvents: eventsInserted,
+      reconciledEvents: reconciledCount,
       rankingsPoll: RANKINGS_POLL,
       teamsTracked: draftedTeams.length,
       teamsWithEspnId: Object.keys(espnIdToTeam).length,
