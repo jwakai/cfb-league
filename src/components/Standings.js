@@ -106,7 +106,6 @@ function getWinLabel(game) {
 }
 
 function ScheduleList({ schedule, espnId, season }) {
-  const { useState, useEffect } = React
   const [fullSchedule, setFullSchedule] = React.useState(null)
   const [loadingSchedule, setLoadingSchedule] = React.useState(false)
 
@@ -181,14 +180,21 @@ function ScheduleList({ schedule, espnId, season }) {
     const base = fullSchedule || schedule || []
     if (!fullSchedule || !schedule) return base
     return base.map(espnGame => {
+      // Match by name first, then fall back to week-only for completed games
+      // ESPN sometimes returns wrong names for small schools (e.g. Mercer vs UL Monroe)
       const dbGame = schedule.find(g =>
         g.week === espnGame.week &&
-        (g.opponent === espnGame.opponent || espnGame.opponent?.includes(g.opponent) || g.opponent?.includes(espnGame.opponent))
-      )
+        (g.opponent === espnGame.opponent ||
+         espnGame.opponent?.includes(g.opponent) ||
+         g.opponent?.includes(espnGame.opponent))
+      ) || (espnGame.result !== null ? schedule.find(g =>
+        g.week === espnGame.week && g.result !== null
+      ) : null)
       if (dbGame) {
         return {
           ...espnGame,
-          // Always prefer Supabase scores for completed games — more reliable
+          // Always prefer Supabase opponent name and data
+          opponent: dbGame.opponent,
           schoolScore: dbGame.schoolScore ?? espnGame.schoolScore,
           opponentScore: dbGame.opponentScore ?? espnGame.opponentScore,
           result: dbGame.result ?? espnGame.result,
@@ -609,6 +615,8 @@ function GlobalTeamRow({ team, managerName, rank }) {
 const SEASON_COMPLETE = false
 
 export default function Standings({ standings, maxPoints, season, currentWeek, weeklyLeader, upcomingGames = [] }) {
+  const featuredPageRef = React.useRef(0)
+  const [featuredPageState, setFeaturedPageState] = React.useState(0)
   const [openManager, setOpenManager] = useState(null)
   const [showTeamLeaderboard, setShowTeamLeaderboard] = useState(false)
 
@@ -794,8 +802,9 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
               )
             }
 
-            const [featuredPage, setFeaturedPage] = React.useState(0)
+            // Use a stable page tracker outside React state to avoid hooks-in-IIFE violation
             const totalPages = Math.ceil(featuredGames.length / 3)
+            const featuredPage = featuredPageRef.current
             const pageGames = featuredGames.slice(featuredPage * 3, featuredPage * 3 + 3)
 
             return (
@@ -867,21 +876,21 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
                 {totalPages > 1 && (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8 }}>
                     <button
-                      onClick={() => setFeaturedPage(p => Math.max(0, p - 1))}
-                      disabled={featuredPage === 0}
-                      style={{ background: 'none', border: 'none', cursor: featuredPage === 0 ? 'default' : 'pointer', opacity: featuredPage === 0 ? 0.3 : 1, fontSize: 14, color: '#c9920e', padding: '0 4px' }}
+                      onClick={() => { featuredPageRef.current = Math.max(0, featuredPageRef.current - 1); setFeaturedPageState(featuredPageRef.current) }}
+                      disabled={featuredPageRef.current === 0}
+                      style={{ background: 'none', border: 'none', cursor: featuredPage === 0 ? 'default' : 'pointer', opacity: featuredPageRef.current === 0 ? 0.3 : 1, fontSize: 14, color: '#c9920e', padding: '0 4px' }}
                     >‹</button>
                     {Array.from({ length: totalPages }).map((_, i) => (
-                      <div key={i} onClick={() => setFeaturedPage(i)} style={{
+                      <div key={i} onClick={() => { featuredPageRef.current = i; setFeaturedPageState(i) }} style={{
                         width: 6, height: 6, borderRadius: '50%', cursor: 'pointer',
-                        background: i === featuredPage ? '#c9920e' : '#d1d1d6',
+                        background: i === featuredPageRef.current ? '#c9920e' : '#d1d1d6',
                         transition: 'background 0.2s',
                       }} />
                     ))}
                     <button
-                      onClick={() => setFeaturedPage(p => Math.min(totalPages - 1, p + 1))}
-                      disabled={featuredPage === totalPages - 1}
-                      style={{ background: 'none', border: 'none', cursor: featuredPage === totalPages - 1 ? 'default' : 'pointer', opacity: featuredPage === totalPages - 1 ? 0.3 : 1, fontSize: 14, color: '#c9920e', padding: '0 4px' }}
+                      onClick={() => { featuredPageRef.current = Math.min(totalPages - 1, featuredPageRef.current + 1); setFeaturedPageState(featuredPageRef.current) }}
+                      disabled={featuredPageRef.current === totalPages - 1}
+                      style={{ background: 'none', border: 'none', cursor: featuredPage === totalPages - 1 ? 'default' : 'pointer', opacity: featuredPageRef.current === totalPages - 1 ? 0.3 : 1, fontSize: 14, color: '#c9920e', padding: '0 4px' }}
                     >›</button>
                   </div>
                 )}
