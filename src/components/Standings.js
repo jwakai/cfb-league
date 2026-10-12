@@ -541,7 +541,7 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
   )
 }
 
-function GlobalTeamRow({ team, managerName, rank }) {
+function GlobalTeamRow({ team, managerName, rank, season }) {
   const [open, setOpen] = useState(false)
   const record = team.record || null
 
@@ -666,7 +666,7 @@ export default function Standings({ standings, maxPoints, season, currentWeek, w
             All Teams — ranked by total points
           </div>
           {allTeamsWithManager.map((team, i) => (
-            <GlobalTeamRow key={`${team.school}-${team.managerName}`} team={team} managerName={team.managerName} rank={i + 1} />
+            <GlobalTeamRow key={`${team.school}-${team.managerName}`} team={team} managerName={team.managerName} rank={i + 1} season={season} />
           ))}
         </div>
       </div>
