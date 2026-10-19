@@ -78,6 +78,23 @@ const ESPN_ID_TO_SCHOOL = {
   79: 'Connecticut', 218: 'Hampton', 233: 'Illinois St',
   311: 'Rhode Island', 2382: 'UL Monroe',
   2460: 'New Hampshire', 2199: 'Drake', 2681: 'Jacksonville',
+  2083: 'Bucknell', 2193: 'East Tennessee St', 50: 'Florida A&M',
+  93: 'Chattanooga', 2458: 'Northern Colorado', 2449: 'SE Louisiana',
+  2393: 'Middle Tennessee', 2534: 'Sam Houston', 331: 'Eastern Washington',
+  2184: 'Colgate', 16: 'Cal Poly', 2241: 'Wofford', 2630: 'Tulsa',
+  2405: 'Monmouth', 98: 'Kent State', 2394: 'Merrimack', 2073: 'Samford',
+  231: 'Idaho', 2330: 'Montana St', 2452: 'North Carolina A&T',
+  2390: 'McNeese', 2623: 'Tarleton St', 2226: 'Duquesne',
+  2309: 'Incarnate Word', 2006: 'Alabama A&M', 2805: 'North Dakota',
+  2725: 'Sacramento St', 292: 'Portland St', 2377: 'McNeese',
+  2717: 'Western Carolina', 2863: 'Bryant', 2504: 'Prairie View A&M',
+  2428: 'NC Central', 258: 'Virginia', 2535: 'UT Martin',
+  2635: 'Tennessee Tech', 2729: 'Villanova', 2142: 'Central Arkansas',
+  2755: 'Stephen F. Austin', 2277: 'East Texas A&M', 2710: 'Wisconsin',
+  2127: 'Ohio Valley', 2210: 'Elon', 2230: 'Gardner Webb',
+  2097: 'Florida', 2717: 'Western Carolina', 2692: 'Colorado',
+  2582: 'Houston', 107: 'Miami OH', 302: 'Eastern Washington',
+  160: 'Maine', 113: 'Lafayette', 119: 'Lehigh',
 }
 
 const SCHOOL_TO_ESPN_ID = Object.fromEntries(
