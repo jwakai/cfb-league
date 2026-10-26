@@ -85,7 +85,7 @@ const ESPN_ID_TO_SCHOOL = {
   2184: 'Colgate', 16: 'Cal Poly', 2241: 'Wofford', 2630: 'Tulsa',
   2405: 'Monmouth', 2394: 'Merrimack', 2073: 'Samford',
   231: 'Idaho', 2330: 'Montana St', 2452: 'North Carolina A&T',
-  2390: 'McNeese', 2623: 'Tarleton St', 2226: 'Duquesne',
+  2623: 'Tarleton St', 2226: 'Duquesne',
   2309: 'Kent State', 2006: 'Alabama A&M', 2805: 'North Dakota',
   2725: 'Sacramento St', 292: 'Portland St', 2377: 'McNeese',
   2717: 'Western Carolina', 2863: 'Bryant', 2504: 'Prairie View A&M',
