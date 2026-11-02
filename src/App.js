@@ -16,17 +16,32 @@ export default function App() {
     fetchStandings()
   }, [season])
 
-  async function fetchStandings() {
-    setLoading(true)
-    setError(null)
+  // Keep the page current without a manual reload (iPad/iPhone browsers keep tabs
+  // alive for days and restore them without refetching). Refresh quietly every
+  // 5 minutes, when the tab becomes visible again, and when the page is restored.
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === 'visible') fetchStandings(true)
+    }
+    const onPageShow = (e) => { if (e.persisted) refresh() }
+    document.addEventListener('visibilitychange', refresh)
+    window.addEventListener('pageshow', onPageShow)
+    const timer = setInterval(refresh, 5 * 60 * 1000)
+    return () => {
+      document.removeEventListener('visibilitychange', refresh)
+      window.removeEventListener('pageshow', onPageShow)
+      clearInterval(timer)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [season])
+
+  async function fetchStandings(silent = false) {
+    // Silent refreshes skip the loading screen and keep existing data on failure
+    if (!silent) setLoading(true)
+    if (!silent) setError(null)
     try {
-      // Fetch ESPN current week + upcoming schedule in parallel with Supabase
-      const espnHeaders = {
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0',
-        'Referer': 'https://www.espn.com/',
-      }
-      const ESPN = 'https://site.web.api.espn.com/apis/site/v2/sports/football/college-football'
+      // ESPN current week + upcoming schedule comes via our own server route
+      // (/api/espn-week) so it works on every device, including iPad/iPhone Safari
 
       const [
         { data: managers, error: mgrError },
@@ -41,8 +56,8 @@ export default function App() {
         supabase.from('Managers_Teams').select('*').eq('season', season),
         supabase.from('Scoring_Events').select('*').eq('season', season),
         supabase.from('team_games').select('*').eq('season', season).limit(5000),
-        fetch(`${ESPN}/scoreboard?year=${season}&seasontype=2&limit=300&groups=80`, { headers: espnHeaders })
-          .then(r => r.json()).catch(() => null),
+        fetch(`/api/espn-week?season=${season}`)
+          .then(r => (r.ok ? r.json() : null)).catch(() => null),
       ])
 
       if (mgrError) throw mgrError
@@ -203,9 +218,9 @@ export default function App() {
       setStandings(sorted.map(s => ({ ...s, currentWeek, weeklyLeader, upcomingGames: upcoming })))
     } catch (err) {
       console.error(err)
-      setError(`Error: ${err.message}`)
+      if (!silent) setError(`Error: ${err.message}`)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
