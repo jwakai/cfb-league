@@ -22,11 +22,10 @@ const POINTS = {
   nationalChampionship: 100,
 }
 
-// ── Rankings poll ────────────────────────────────────────────
-// 'auto' (default): for each week, use the College Football Playoff rankings if they
-// exist for that week, otherwise the AP Top 25. No manual switch needed mid-season.
-// Can still be forced to 'ap' or 'cfp'.
-const RANKINGS_POLL = 'auto'
+// ── Rankings ─────────────────────────────────────────────────
+// Top 25 status comes from ESPN's own rank on each game, which reflects the ranking in
+// effect when that game was played. ESPN follows the AP poll until the CFP rankings are
+// released, then follows the CFP rankings automatically. No manual switch is needed.
 
 // ── ESPN ID → DB school name ─────────────────────────────────
 const ESPN_ID_TO_SCHOOL = {
@@ -130,39 +129,6 @@ async function fetchWeekGames(year, week, seasontype) {
   } catch(e) {
     console.warn(`[ESPN] week ${week} seasontype ${seasontype}:`, e.message)
     return []
-  }
-}
-
-// Returns { ranked: { espnId: rank }, used: 'cfp' | 'ap' | 'none' }
-async function fetchRankings(year, week, poll) {
-  try {
-    const data = await espnFetch(
-      `${ESPN_WEB}/rankings?year=${year}&week=${week}&seasontype=2`
-    )
-    const polls = data.rankings || []
-    const nameOf = p => `${p.name || ''} ${p.shortName || ''}`.toLowerCase()
-    const isCfp = p => nameOf(p).includes('playoff') || /\bcfp\b/.test(nameOf(p))
-    const isAp = p => !isCfp(p) && (nameOf(p).includes('ap top') || /\bap\b/.test(nameOf(p)))
-    const toMap = target => {
-      const ranked = {}
-      ;(target?.ranks || []).forEach(r => {
-        const id = Number(r.team?.id)
-        if (id && r.current <= 25) ranked[id] = r.current
-      })
-      return ranked
-    }
-    const cfpMap = toMap(polls.find(isCfp))
-    const apMap = toMap(polls.find(isAp))
-    const has = m => Object.keys(m).length > 0
-
-    if (poll === 'ap')  return { ranked: apMap,  used: has(apMap)  ? 'ap'  : 'none' }
-    if (poll === 'cfp') return { ranked: cfpMap, used: has(cfpMap) ? 'cfp' : 'none' }
-    // auto: CFP once it exists for this week, otherwise AP
-    if (has(cfpMap)) return { ranked: cfpMap, used: 'cfp' }
-    return { ranked: apMap, used: has(apMap) ? 'ap' : 'none' }
-  } catch(e) {
-    console.warn(`[ESPN] rankings week ${week}:`, e.message)
-    return { ranked: {}, used: 'none' }
   }
 }
 
@@ -270,15 +236,7 @@ module.exports = async function handler(req, res) {
     }
     console.log(`[update-scores] ${allEvents.length} ESPN events fetched`)
 
-    // 4. Fetch rankings by week
-    const weeks = [...new Set(allEvents.map(e => e.week?.number).filter(Boolean))]
-    const weekRankings = {}
-    const rankingPollByWeek = {}
-    for (const w of weeks) {
-      const { ranked, used } = await fetchRankings(season, w, RANKINGS_POLL)
-      weekRankings[w] = ranked
-      rankingPollByWeek[w] = used
-    }
+
 
     // 5. Process events
     const newGameRows = []
@@ -302,8 +260,7 @@ module.exports = async function handler(req, res) {
         if (!managerId) continue
 
         const won = teamScore > oppScore
-        const weekRank = weekRankings[p.week] || {}
-        const finalOppRank = oppRank ?? (weekRank[oppId] <= 25 ? weekRank[oppId] : null)
+        const finalOppRank = oppRank ?? null
         const isRanked = finalOppRank !== null
         const oppSchool = ESPN_ID_TO_SCHOOL[oppId]
         const isRival = oppSchool === team.rival_1 || oppSchool === team.rival_2
@@ -479,8 +436,7 @@ module.exports = async function handler(req, res) {
       newGames: newGameRows.length,
       newScoringEvents: eventsInserted,
       reconciledEvents: reconciledCount,
-      rankingsPoll: RANKINGS_POLL,
-      rankingPollByWeek,
+      rankingSource: 'espn_rank_at_game_time',
       teamsTracked: draftedTeams.length,
       teamsWithEspnId: Object.keys(espnIdToTeam).length,
     })
