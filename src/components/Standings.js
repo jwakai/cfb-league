@@ -3,7 +3,7 @@ import { ConferenceLogo } from './conferenceLogo'
 
 const MEDAL = ['🥇', '🥈', '🥉']
 
-const TEAM_ESPN_IDS = {
+export const TEAM_ESPN_IDS = {
   'Indiana': 84, 'Boise St': 68, 'Toledo': 2649, 'Clemson': 228,
   'Louisiana': 309, 'UCF': 2116, 'Mississippi St': 344, 'Michigan St': 127,
   'Miami': 2390, 'Vanderbilt': 238, 'Cincinnati': 2132, 'Cal': 25,
@@ -467,6 +467,12 @@ function TeamRow({ team, openTeam, setOpenTeam, season }) {
             {record && (
               <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500 }}>({record})</span>
             )}
+            {team.cfpProjected && (
+              <span title={team.cfpNote || undefined} style={{
+                fontSize: 8, fontWeight: 800, color: '#fff', background: '#c9920e',
+                borderRadius: 4, padding: '1px 5px', letterSpacing: '0.06em'
+              }}>{team.cfpNote ? 'CFP · G6' : 'CFP'}</span>
+            )}
             {team.conference !== 'Independent' && (
               <ConferenceLogo conference={team.conference} size={14} />
             )}
@@ -513,7 +519,10 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
   const barWidth = Math.round((mgr.totalPoints / maxPoints) * 100)
   const topTeam = mgr.topTeam
   const logoUrl = topTeam ? teamLogoUrl(topTeam.school) : null
-  const cfpCount = mgr.teams.filter(t => t.cfpProjected).length
+  const cfpTeams = mgr.teams
+    .filter(t => t.cfpProjected)
+    .sort((a, b) => (a.cfpRank ?? 99) - (b.cfpRank ?? 99))
+  const cfpCount = cfpTeams.length
 
   function handleToggle() {
     if (open) {
@@ -579,16 +588,31 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
           }}>
             {mgr.name}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-            {[0, 1, 2].map(i => (
-              <div key={i} style={{
-                width: 6, height: 6, borderRadius: '50%',
-                background: i < cfpCount ? '#c9920e' : '#e5e5ea', flexShrink: 0
-              }} />
-            ))}
-            <span style={{ fontSize: 9, color: 'var(--text-secondary)', marginLeft: 2 }}>
-              {cfpCount === 0 ? 'No teams in CFP' : `${cfpCount} team${cfpCount > 1 ? 's' : ''} in CFP`}
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+            {cfpCount > 0 ? (
+              <>
+                <span style={{
+                  fontSize: 9, fontWeight: 800, color: '#fff', background: '#c9920e',
+                  borderRadius: 10, padding: '2px 8px', letterSpacing: '0.06em',
+                  textTransform: 'uppercase', whiteSpace: 'nowrap', flexShrink: 0
+                }}>{cfpCount} in CFP</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
+                  {cfpTeams.map(t => (
+                    <img key={t.school}
+                      src={teamLogoUrl(t.school)}
+                      alt={t.school}
+                      title={(t.cfpRank ? `#${t.cfpRank} ${t.school}` : t.school) + (t.cfpNote ? ` — ${t.cfpNote}` : '')}
+                      style={{
+                        width: 18, height: 18, objectFit: 'contain', borderRadius: '50%',
+                        background: '#fff', padding: 1, boxShadow: '0 0 0 1.5px #c9920e'
+                      }}
+                      onError={e => { e.target.style.display = 'none' }} />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <span style={{ fontSize: 9, color: 'var(--text-secondary)' }}>No teams in CFP</span>
+            )}
           </div>
           <div style={{ height: 3, background: '#f2f2f7', borderRadius: 2, overflow: 'hidden' }}>
             <div style={{
