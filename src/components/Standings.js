@@ -523,6 +523,11 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
     .filter(t => t.cfpProjected)
     .sort((a, b) => (a.cfpRank ?? 99) - (b.cfpRank ?? 99))
   const cfpCount = cfpTeams.length
+  // One shared style so every CFP message matches in size, weight and color
+  const cfpTextStyle = {
+    fontSize: 9, fontWeight: 800, color: 'var(--text-secondary)',
+    whiteSpace: 'nowrap', flexShrink: 0,
+  }
 
   function handleToggle() {
     if (open) {
@@ -591,11 +596,9 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
             {cfpCount > 0 ? (
               <>
-                <span style={{
-                  fontSize: 9, fontWeight: 800, color: '#fff', background: '#c9920e',
-                  borderRadius: 10, padding: '2px 8px', letterSpacing: '0.06em',
-                  textTransform: 'uppercase', whiteSpace: 'nowrap', flexShrink: 0
-                }}>{cfpCount} in CFP</span>
+                <span style={cfpTextStyle}>
+                  {cfpCount} {cfpCount === 1 ? 'team' : 'teams'} in CFP
+                </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
                   {cfpTeams.map(t => (
                     <img key={t.school}
@@ -611,7 +614,7 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
                 </div>
               </>
             ) : (
-              <span style={{ fontSize: 9, color: 'var(--text-secondary)' }}>
+              <span style={cfpTextStyle}>
                 {mgr.cfpAvailable === false ? 'CFP rankings unavailable' : 'No teams in CFP'}
               </span>
             )}
