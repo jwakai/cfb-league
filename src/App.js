@@ -278,7 +278,7 @@ export default function App() {
         }
       }
 
-      setStandings(sorted.map(s => ({ ...s, currentWeek, weeklyLeader, upcomingGames: upcoming })))
+      setStandings(sorted.map(s => ({ ...s, currentWeek, weeklyLeader, upcomingGames: upcoming, cfpAvailable: !!cfpProjection })))
     } catch (err) {
       console.error(err)
       if (!silent) setError(`Error: ${err.message}`)
