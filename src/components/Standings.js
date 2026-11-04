@@ -611,7 +611,9 @@ function ManagerRow({ mgr, rank, maxPoints, seasonComplete, openManager, setOpen
                 </div>
               </>
             ) : (
-              <span style={{ fontSize: 9, color: 'var(--text-secondary)' }}>No teams in CFP</span>
+              <span style={{ fontSize: 9, color: 'var(--text-secondary)' }}>
+                {mgr.cfpAvailable === false ? 'CFP rankings unavailable' : 'No teams in CFP'}
+              </span>
             )}
           </div>
           <div style={{ height: 3, background: '#f2f2f7', borderRadius: 2, overflow: 'hidden' }}>
