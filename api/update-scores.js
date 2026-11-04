@@ -23,8 +23,10 @@ const POINTS = {
 }
 
 // ── Rankings poll ────────────────────────────────────────────
-// 'ap' until ~Week 9, then switch to 'cfp'
-const RANKINGS_POLL = 'ap'
+// 'auto' (default): for each week, use the College Football Playoff rankings if they
+// exist for that week, otherwise the AP Top 25. No manual switch needed mid-season.
+// Can still be forced to 'ap' or 'cfp'.
+const RANKINGS_POLL = 'auto'
 
 // ── ESPN ID → DB school name ─────────────────────────────────
 const ESPN_ID_TO_SCHOOL = {
@@ -131,28 +133,36 @@ async function fetchWeekGames(year, week, seasontype) {
   }
 }
 
+// Returns { ranked: { espnId: rank }, used: 'cfp' | 'ap' | 'none' }
 async function fetchRankings(year, week, poll) {
   try {
     const data = await espnFetch(
       `${ESPN_WEB}/rankings?year=${year}&week=${week}&seasontype=2`
     )
     const polls = data.rankings || []
-    const target = polls.find(p =>
-      poll === 'ap'
-        ? p.name?.toLowerCase().includes('ap top')
-        : p.name?.toLowerCase().includes('college football playoff')
-    )
-    const ranked = {}
-    if (target) {
-      ;(target.ranks || []).forEach(r => {
+    const nameOf = p => `${p.name || ''} ${p.shortName || ''}`.toLowerCase()
+    const isCfp = p => nameOf(p).includes('playoff') || /\bcfp\b/.test(nameOf(p))
+    const isAp = p => !isCfp(p) && (nameOf(p).includes('ap top') || /\bap\b/.test(nameOf(p)))
+    const toMap = target => {
+      const ranked = {}
+      ;(target?.ranks || []).forEach(r => {
         const id = Number(r.team?.id)
         if (id && r.current <= 25) ranked[id] = r.current
       })
+      return ranked
     }
-    return ranked
+    const cfpMap = toMap(polls.find(isCfp))
+    const apMap = toMap(polls.find(isAp))
+    const has = m => Object.keys(m).length > 0
+
+    if (poll === 'ap')  return { ranked: apMap,  used: has(apMap)  ? 'ap'  : 'none' }
+    if (poll === 'cfp') return { ranked: cfpMap, used: has(cfpMap) ? 'cfp' : 'none' }
+    // auto: CFP once it exists for this week, otherwise AP
+    if (has(cfpMap)) return { ranked: cfpMap, used: 'cfp' }
+    return { ranked: apMap, used: has(apMap) ? 'ap' : 'none' }
   } catch(e) {
     console.warn(`[ESPN] rankings week ${week}:`, e.message)
-    return {}
+    return { ranked: {}, used: 'none' }
   }
 }
 
@@ -263,8 +273,11 @@ module.exports = async function handler(req, res) {
     // 4. Fetch rankings by week
     const weeks = [...new Set(allEvents.map(e => e.week?.number).filter(Boolean))]
     const weekRankings = {}
+    const rankingPollByWeek = {}
     for (const w of weeks) {
-      weekRankings[w] = await fetchRankings(season, w, RANKINGS_POLL)
+      const { ranked, used } = await fetchRankings(season, w, RANKINGS_POLL)
+      weekRankings[w] = ranked
+      rankingPollByWeek[w] = used
     }
 
     // 5. Process events
@@ -467,6 +480,7 @@ module.exports = async function handler(req, res) {
       newScoringEvents: eventsInserted,
       reconciledEvents: reconciledCount,
       rankingsPoll: RANKINGS_POLL,
+      rankingPollByWeek,
       teamsTracked: draftedTeams.length,
       teamsWithEspnId: Object.keys(espnIdToTeam).length,
     })
