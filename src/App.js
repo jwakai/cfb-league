@@ -1,8 +1,56 @@
 import React, { useState, useEffect } from 'react'
 import './index.css'
 import { supabase } from './supabaseClient'
-import Standings from './components/Standings'
+import Standings, { TEAM_ESPN_IDS } from './components/Standings'
 import Header from './components/Header'
+
+// Number of teams in the College Football Playoff field. Change if the format changes.
+const CFP_FIELD_SIZE = 12
+
+// 2026 CFP rules (as modeled here):
+//  - 12-team field
+//  - The highest-ranked Group of 6 team is guaranteed a spot, even if ranked outside the top 12
+//    (the Group of 6 now includes the rebuilt Pac-12, e.g. Boise State)
+//  - Notre Dame is guaranteed a spot if ranked in the top 12
+//  - Everyone else fills the remaining spots in ranking order
+// Not modeled: the Power 4 conference-champion guarantee (champions aren't known until
+// conference title games are played). Once CFP games are recorded, those teams count too.
+const POWER_FOUR_SCHOOLS = [
+  // SEC
+  'Alabama', 'Arkansas', 'Auburn', 'Florida', 'Georgia', 'Kentucky', 'LSU', 'Mississippi St',
+  'Missouri', 'Oklahoma', 'Ole Miss', 'South Carolina', 'Tennessee', 'Texas', 'Texas A&M', 'Vanderbilt',
+  // Big Ten
+  'Illinois', 'Indiana', 'Iowa', 'Maryland', 'Michigan', 'Michigan St', 'Minnesota', 'Nebraska',
+  'Northwestern', 'Ohio St', 'Oregon', 'Penn St', 'Purdue', 'Rutgers', 'UCLA', 'USC', 'Washington', 'Wisconsin',
+  // Big 12
+  'Arizona', 'Arizona St', 'Baylor', 'BYU', 'Cincinnati', 'Colorado', 'Houston', 'Iowa St', 'Kansas',
+  'Kansas St', 'Oklahoma St', 'TCU', 'Texas Tech', 'UCF', 'Utah', 'West Virginia',
+  // ACC
+  'Boston College', 'Cal', 'Clemson', 'Duke', 'Florida St', 'Georgia Tech', 'Louisville', 'Miami',
+  'NC St', 'UNC', 'Pitt', 'SMU', 'Stanford', 'Syracuse', 'Virginia', 'Virginia Tech', 'Wake Forest',
+]
+const POWER_FOUR_IDS = new Set(POWER_FOUR_SCHOOLS.map(s => TEAM_ESPN_IDS[s]).filter(Boolean))
+
+// liveRanks: { espnTeamId: rank } for the top 25. Returns the projected field.
+function projectCfpField(liveRanks) {
+  const ranked = Object.entries(liveRanks)
+    .map(([id, rank]) => ({ id: Number(id), rank }))
+    .sort((a, b) => a.rank - b.rank)
+  const ndId = TEAM_ESPN_IDS['Notre Dame']
+
+  // Highest-ranked Group of 6 team = highest-ranked team that isn't Power 4 or Notre Dame
+  const g6 = ranked.find(t => !POWER_FOUR_IDS.has(t.id) && t.id !== ndId) || null
+  const nd = ranked.find(t => t.id === ndId) || null
+
+  const field = new Set()
+  if (g6) field.add(g6.id)
+  if (nd && nd.rank <= CFP_FIELD_SIZE) field.add(nd.id)
+  for (const t of ranked) {
+    if (field.size >= CFP_FIELD_SIZE) break
+    field.add(t.id)
+  }
+  return { field, g6Id: g6 ? g6.id : null, g6Rank: g6 ? g6.rank : null }
+}
 
 export default function App() {
   const [standings, setStandings] = useState([])
@@ -98,6 +146,12 @@ export default function App() {
       }
       setUpcomingGames(upcoming)
 
+      // Live rankings from ESPN (CFP once released, otherwise AP)
+      const liveRanks = espnScoreboard?.rankings?.ranks || {}
+      const rankPoll = espnScoreboard?.rankings?.poll || null
+      const haveLiveRanks = Object.keys(liveRanks).length > 0
+      const cfpProjection = rankPoll === 'cfp' ? projectCfpField(liveRanks) : null
+
       const managerMap = {}
       managers.forEach(mgr => {
         managerMap[mgr.id] = { name: mgr.name, totalPoints: 0, teams: [] }
@@ -134,12 +188,19 @@ export default function App() {
           ? `${lastPlayedGame.result} ${lastPlayedGame.home ? 'vs' : 'at'} ${lastPlayedGame.opponent}`
           : null
 
-        // CFP projection — team has a CFP game recorded
-        const cfpProjected = teamGames.some(g => g.is_cfp)
+        // Current ranking from ESPN's live rankings (CFP once released, otherwise AP).
+        // Falls back to the Teams table only if the live rankings couldn't be loaded.
+        const espnId = TEAM_ESPN_IDS[team.school]
+        const liveRank = espnId ? (liveRanks[espnId] ?? null) : null
+        const currentRank = haveLiveRanks ? liveRank : (team.current_rank || null)
 
-        // Current AP ranking — most recent week's ranking from team_games opponent data
-        // Will be populated via Phase 5 rankings API; null during off-season
-        const currentRank = team.current_rank || null
+        // CFP projection — in the projected field (see rules above), or has played a CFP game
+        const cfpRank = (rankPoll === 'cfp' && liveRank) ? liveRank : null
+        const inCfpField = !!(cfpProjection && espnId && cfpProjection.field.has(espnId))
+        const cfpProjected = teamGames.some(g => g.is_cfp) || inCfpField
+        const cfpNote = (inCfpField && espnId === cfpProjection.g6Id && cfpRank > CFP_FIELD_SIZE)
+          ? 'Highest-ranked Group of 6 team: guaranteed bid'
+          : null
 
         mgr.teams.push({
           id: team.id,
@@ -153,6 +214,8 @@ export default function App() {
           nextOpponent,
           lastGame,
           cfpProjected,
+          cfpRank,
+          cfpNote,
           currentRank,
           schedule: teamGames.map(g => ({
             week: g.week,
